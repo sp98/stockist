@@ -39,7 +39,7 @@ func KiteConnect() (*kiteconnect.Client, string) {
 	// }
 
 	// fmt.Println(data.AccessToken)
-	accessToken := "K3Aro6h07IXuQHZcXo6WbHCTsutiOY2V"
+	accessToken := "GV0mPVnY6FzsRzHCihF1ID9M8uLR2R21"
 	kc.SetAccessToken(accessToken)
 
 	// holdings, err := kc.GetHoldings()

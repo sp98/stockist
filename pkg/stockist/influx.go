@@ -1,6 +1,7 @@
 package stockist
 
 import (
+	"fmt"
 	"log"
 
 	client "github.com/influxdata/influxdb1-client/v2"
@@ -9,7 +10,14 @@ import (
 
 /*
 Handle influx db operations in this file
+Errors:
+1. Database not found:
+
 */
+
+var cQuery = "CREATE CONTINUOUS QUERY %s ON %s BEGIN %s END"
+
+var cQuery3m = "SELECT mean(Open) as Open, mean(High) as High, mean(Low) as Low, mean(Close) as Close, mean(TotalBuyQuantity) as TotalBuyQuantity, mean(TotalSellQuantity) as TotalBuyQuantity INTO %s FROM %s GROUP BY time(%s)"
 
 //InfluxDB is the influx db struct
 type InfluxDB struct {
@@ -19,6 +27,16 @@ type InfluxDB struct {
 	Client      *client.Client
 	Name        string
 	Measurement string
+}
+
+//NewDB returns instance of an InfluxDB struct
+func NewDB() *InfluxDB {
+
+	return &InfluxDB{
+		Address: "http://localhost:8086",
+		Name:    "stockist",
+	}
+
 }
 
 //InfluxDBClient creates a new Influx DB client
@@ -50,6 +68,10 @@ func (db InfluxDB) TodaysOrders() {
 //InsertTick data in influx db
 func (db InfluxDB) InsertTick(tickData *kiteticker.Tick) {
 	// Create a new point batch
+
+	c := *db.Client
+	defer c.Close()
+
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  db.Name,
 		Precision: "s",
@@ -68,7 +90,7 @@ func (db InfluxDB) InsertTick(tickData *kiteticker.Tick) {
 		"TotalSellQuantity": tick.TotalSellQuantity,
 	}
 	tags := map[string]string{
-		"instrument_token": "test",
+		"instrument_token": fmt.Sprint(tick.InstrumentToken),
 	}
 
 	pt, err := client.NewPoint(db.Measurement, tags, fields, tickData.Timestamp.Time)
@@ -76,10 +98,28 @@ func (db InfluxDB) InsertTick(tickData *kiteticker.Tick) {
 		log.Fatal(err)
 	}
 	bp.AddPoint(pt)
-	c := *db.Client
+
 	// Write the batch
 	if err := c.Write(bp); err != nil {
 		log.Fatal(err)
 	}
+
+}
+
+// CreateContinuousQuery creates a continueous query on a measure.
+func (db InfluxDB) CreateContinuousQuery() {
+	c := *db.Client
+	defer c.Close()
+	cqMeaurement := fmt.Sprintf("%s_%s", db.Measurement, "2m")
+	cq := fmt.Sprintf(cQuery3m, cqMeaurement, db.Measurement, "2m")
+	finalQuery := fmt.Sprintf(cQuery, cqMeaurement, db.Name, cq)
+	fmt.Printf("CQ Final Query - %s\n", finalQuery)
+	q := client.NewQuery(finalQuery, db.Name, "")
+	response, err := c.Query(q)
+
+	if err != nil && response.Error() != nil {
+		fmt.Printf("Error ins creating CQ - %+v\n", err)
+	}
+	fmt.Printf("CQ create response - %+v\n", response.Results)
 
 }

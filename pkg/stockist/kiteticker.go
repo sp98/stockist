@@ -8,9 +8,9 @@ Handle Kite Ticket relation operations.
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
-	"github.com/beeker1121/goque"
 	ms "github.com/mitchellh/mapstructure"
 	kiteconnect "github.com/zerodhatech/gokiteconnect"
 	kiteticker "github.com/zerodhatech/gokiteconnect/ticker"
@@ -47,11 +47,10 @@ func onConnect() {
 func onTick(tick kiteticker.Tick) {
 	fmt.Println("Tick received!")
 
-	for i := 0; i < 10; i++ {
-		fmt.Printf(" %d st Tick received \n", i)
-		time.Sleep(3)
+	for i := 0; i < 1000; i++ {
+		time.Sleep(2 * time.Second)
 		dticks := dummyTicks()
-		EnqueueTick(dticks)
+		StoreTickInDB(dticks)
 	}
 
 	//EnqueueTick(&tick)
@@ -94,71 +93,16 @@ func StartTicker(accestoken string) {
 
 }
 
-//EnqueueTick stores the newly received tick data into a prefix queue
-func EnqueueTick(tick *kiteticker.Tick) {
+//StoreTickInDB stors the tick in influx db
+func StoreTickInDB(tick *kiteticker.Tick) {
+	fmt.Printf("Tick to be saved: %+v\n", tick)
 
-	// tickData := &TickData{
-	// 	Open:              tick.OHLC.Open,
-	// 	High:              tick.OHLC.High,
-	// 	Low:               tick.OHLC.Low,
-	// 	Close:             tick.OHLC.Close,
-	// 	TotalBuyQuantity:  tick.TotalBuyQuantity,
-	// 	TotalSellQuantity: tick.TotalSellQuantity,
-	// 	Timestamp:         tick.Timestamp,
-	// }
-
-	queue := &Queue{
-		Prefix: string(tick.InstrumentToken),
-		Data:   tickToMap(tick),
-		Path:   "test-queue",
-	}
-
-	qc, _ := queue.Create()
-	queue.Client = qc
-	fmt.Printf("Priting q client here- %v/n", queue)
-
-	err := queue.Insert()
-	if err != nil {
-		fmt.Printf("Error here")
-	}
-
-	fmt.Println("------------------------------------")
-	//OrderDetails.QueueInsert(tick)
-	// dbClient := InfluxDBClient()
-	// fmt.Println(dbClient)
-	//InsertTick(dbClient, tickData)
-
-}
-
-//StoreTickInDB pops items from the Stock Queue and adds them to the queue
-func StoreTickInDB(prefix string) {
-	queue := &Queue{
-		Prefix: prefix,
-		Path:   "test-queue",
-	}
-
-	for {
-		qc, err := queue.Create()
-		if err != nil {
-			fmt.Printf("Error TTTT creating Queue - %v", err)
-			continue
-		}
-
-		queue.Client = qc
-		data, err := queue.Pop()
-		if err == goque.ErrEmpty {
-			fmt.Printf("Nothing to Pop - %v", err)
-			continue
-		}
-
-		tick := mapToTick(data)
-
-		db := NewInfluxDB()
-		db.InfluxDBClient()
-
-		db.InsertTick(tick)
-
-	}
+	db := NewDB()
+	db.InfluxDBClient()
+	db.Measurement = fmt.Sprintf("%s_%s", "today", strconv.FormatUint(uint64(tick.InstrumentToken), 10))
+	fmt.Println("measurement -", db.Measurement)
+	//db.Measurement = "test"
+	db.InsertTick(tick)
 
 }
 func tickToMap(tick *kiteticker.Tick) map[string]interface{} {
@@ -178,26 +122,4 @@ func mapToTick(data map[string]interface{}) *kiteticker.Tick {
 
 	return tick
 
-}
-
-func dummyTicks() *kiteticker.Tick {
-
-	t := kiteconnect.Time{}
-	//t := time.Now()
-
-	ohlc := &kiteticker.OHLC{
-		Open:  123,
-		Close: 122,
-		High:  130,
-		Low:   116,
-	}
-	ticks := &kiteticker.Tick{
-		OHLC:              *ohlc,
-		InstrumentToken:   1234,
-		TotalBuyQuantity:  1000,
-		TotalSellQuantity: 800,
-		Timestamp:         t,
-	}
-
-	return ticks
 }

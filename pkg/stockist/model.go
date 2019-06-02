@@ -39,16 +39,6 @@ type TickData struct {
 type Depth struct {
 }
 
-//NewInfluxDB returns instance of an InfluxDB struct
-func NewInfluxDB() *InfluxDB {
-
-	return &InfluxDB{
-		Address: "http://localhost:8086",
-		Name:    "Stockist",
-	}
-
-}
-
 //NewOrderDetails gets details about orders to be executed today
 func NewOrderDetails() *OrderDetails {
 	return &OrderDetails{}

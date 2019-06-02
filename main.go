@@ -10,9 +10,12 @@ func main() {
 	fmt.Println("-- Welcome to Stockist --")
 
 	// Create a DB connection
-	db := stockist.NewInfluxDB()
+	db := stockist.NewDB()
+	db.Measurement = fmt.Sprintf("%s_%s", "today", "12345")
 	db.InfluxDBClient()
 	fmt.Printf("DB - %+v\n", db)
+
+	db.CreateContinuousQuery()
 
 	// Get Todays Orders from the DB
 
@@ -25,9 +28,9 @@ func main() {
 	orderDetails.KiteClient = kc
 
 	//Start Kite Ticker:
-	go stockist.StartTicker(accessToken)
+	stockist.StartTicker(accessToken)
 	//go stockist.StoreTickInDB(orderDetails.InstrumentToken)
 
-	fmt.Scanf("Enter your name here - ")
+	// fmt.Scanf("Enter your name here - ")
 
 }
