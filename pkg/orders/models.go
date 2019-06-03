@@ -1,27 +1,21 @@
-package stockist
+package orders
 
 import (
-	"github.com/beeker1121/goque"
 	kiteconnect "github.com/zerodhatech/gokiteconnect"
-	kiteticker "github.com/zerodhatech/gokiteconnect/ticker"
 )
 
 /**
 Create all the Models (Struts) here
 **/
 
-//OrderDetails to be executed
-type OrderDetails struct {
-	KiteClient      *kiteconnect.Client
-	DB              *InfluxDB
-	Queue           *goque.PrefixQueue
+//Order to be executed
+type Order struct {
 	InstrumentName  string
 	InstrumentToken string
 	Exchange        string
 	TradeInterval   string
 	TradeAmount     string
 	TradeDate       string
-	TickData        *kiteticker.Tick
 }
 
 //TickData is the parsed tick data to added to influx DB
@@ -37,9 +31,4 @@ type TickData struct {
 
 // Depth holds the ticker depth data
 type Depth struct {
-}
-
-//NewOrderDetails gets details about orders to be executed today
-func NewOrderDetails() *OrderDetails {
-	return &OrderDetails{}
 }

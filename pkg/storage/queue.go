@@ -1,4 +1,4 @@
-package stockist
+package storage
 
 import (
 	"bytes"

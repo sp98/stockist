@@ -1,4 +1,4 @@
-package stockist
+package kite
 
 /*
 Handle Kite Ticket relation operations.
@@ -6,12 +6,12 @@ Handle Kite Ticket relation operations.
 */
 
 import (
-	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
-	ms "github.com/mitchellh/mapstructure"
+	"github.com/stockist/pkg/storage"
 	kiteconnect "github.com/zerodhatech/gokiteconnect"
 	kiteticker "github.com/zerodhatech/gokiteconnect/ticker"
 )
@@ -20,6 +20,8 @@ import (
 
 var (
 	ticker *kiteticker.Ticker
+	//Subcriptions to the instruments token 112129
+	Subcriptions = []uint32{}
 )
 
 // Triggered when any error is raised
@@ -35,23 +37,26 @@ func onClose(code int, reason string) {
 // Triggered when connection is established and ready to send and accept data
 func onConnect() {
 	fmt.Println("Connected")
-	err := ticker.Subscribe([]uint32{112129})
+	log.Printf("Subcriptions - %+v\n", Subcriptions)
+	err := ticker.Subscribe(Subcriptions)
 	if err != nil {
 		fmt.Println("err: ", err)
 	}
 
-	ticker.SetMode(kiteticker.ModeFull, []uint32{112129})
+	ticker.SetMode(kiteticker.ModeFull, Subcriptions)
 }
 
 // Triggered when tick is recevived
 func onTick(tick kiteticker.Tick) {
-	fmt.Println("Tick received!")
+	log.Println("Tick Received frome Kite API")
+	StoreTickInDB(&tick)
 
-	for i := 0; i < 1000; i++ {
-		time.Sleep(2 * time.Second)
-		dticks := dummyTicks()
-		StoreTickInDB(dticks)
-	}
+	// //Run with dummy data when market is closed!
+	// for i := 0; i < 1000; i++ {
+	// 	time.Sleep(2 * time.Second)
+	// 	dticks := dummyTicks()
+	// 	StoreTickInDB(dticks)
+	// }
 
 	//EnqueueTick(&tick)
 
@@ -95,31 +100,30 @@ func StartTicker(accestoken string) {
 
 //StoreTickInDB stors the tick in influx db
 func StoreTickInDB(tick *kiteticker.Tick) {
-	fmt.Printf("Tick to be saved: %+v\n", tick)
-
-	db := NewDB()
-	db.InfluxDBClient()
-	db.Measurement = fmt.Sprintf("%s_%s", "today", strconv.FormatUint(uint64(tick.InstrumentToken), 10))
-	fmt.Println("measurement -", db.Measurement)
+	log.Printf("Tick received: %+v\n", tick)
+	log.Println("---------------------------------")
+	db := storage.NewDB("http://localhost:8086", "stockist", "")
+	db.Measurement = fmt.Sprintf("%s_%s_%s", "ticks", strconv.FormatUint(uint64(tick.InstrumentToken), 10), storage.CurrentDate("01022006"))
 	//db.Measurement = "test"
 	db.InsertTick(tick)
 
 }
-func tickToMap(tick *kiteticker.Tick) map[string]interface{} {
-	var inInterface map[string]interface{}
-	inrec, _ := json.Marshal(tick)
-	json.Unmarshal(inrec, &inInterface)
-	return inInterface
-}
 
-func mapToTick(data map[string]interface{}) *kiteticker.Tick {
+// func tickToMap(tick *kiteticker.Tick) map[string]interface{} {
+// 	var inInterface map[string]interface{}
+// 	inrec, _ := json.Marshal(tick)
+// 	json.Unmarshal(inrec, &inInterface)
+// 	return inInterface
+// }
 
-	var tick *kiteticker.Tick
-	err := ms.Decode(data, &tick)
-	if err != nil {
-		panic(err)
-	}
+// func mapToTick(data map[string]interface{}) *kiteticker.Tick {
 
-	return tick
+// 	var tick *kiteticker.Tick
+// 	err := ms.Decode(data, &tick)
+// 	if err != nil {
+// 		panic(err)
+// 	}
 
-}
+// 	return tick
+
+// }

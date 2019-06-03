@@ -1,4 +1,4 @@
-package stockist
+package kite
 
 /*
 Handling Kite connections and related operations here, like:
@@ -21,25 +21,27 @@ func GetKiteAccessToken() {
 
 }
 
-// KiteConnect creates a connection with the kite API.
-func KiteConnect() (*kiteconnect.Client, string) {
+// Connect creates a connection with the kite API.
+func Connect() (*kiteconnect.Client, string) {
 
 	// fmt.Println("Creating Saudgar!")
 	// kiteSession := scrapper.NewWDSession()
 	kc := kiteconnect.New(apiKey)
+	// fmt.Println(kc.GetLoginURL())
 	// authURL := kiteSession.GetKiteAuthURL(kc.GetLoginURL())
 	// fmt.Println(authURL)
-	//requestToken := "ZDxeebXgqR9KoZYQ8xwdnzi6vRffR4wH"
+	// requestToken := "0w9iSbcyH57ofgk6nAfAdzeUNd7xf1LE"
 
 	// //Get user details and access token
 	// data, err := kc.GenerateSession(requestToken, apiSecret)
 	// if err != nil {
 	// 	fmt.Printf("Error: %v", err)
-	// 	return
+
 	// }
 
 	// fmt.Println(data.AccessToken)
-	accessToken := "GV0mPVnY6FzsRzHCihF1ID9M8uLR2R21"
+	// panic(1)
+	accessToken := "6fbbf9hI4vM6T2fpYV1ylZEu7LtrFK0K"
 	kc.SetAccessToken(accessToken)
 
 	// holdings, err := kc.GetHoldings()
@@ -49,6 +51,7 @@ func KiteConnect() (*kiteconnect.Client, string) {
 	// fmt.Println("holdings: ", holdings)
 	// inst, _ := kc.GetInstruments()
 	// fmt.Println(inst)
+	// panic(1)
 
 	return kc, accessToken
 

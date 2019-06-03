@@ -1,4 +1,4 @@
-package stockist
+package kite
 
 import (
 	"math/rand"
@@ -25,7 +25,7 @@ func dummyTicks() *kiteticker.Tick {
 	}
 	ticks := &kiteticker.Tick{
 		Mode:               mode,
-		InstrumentToken:    12345,
+		InstrumentToken:    getUnit32(12345, 12347),
 		IsTradable:         true,
 		IsIndex:            true,
 		LastPrice:          getFloat64(20, 30),
