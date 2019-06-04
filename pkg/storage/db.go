@@ -20,7 +20,7 @@ var (
 	createDB   = "CREATE DATABASE %s"
 	orderQuery = "SELECT * FROM Orders WHERE TradeDate=~/%s/"
 	cQuery     = "CREATE CONTINUOUS QUERY %s ON %s BEGIN %s END"
-	cQuery3m   = "SELECT mean(Open) as Open, mean(High) as High, mean(Low) as Low, mean(Close) as Close, mean(TotalBuyQuantity) as TotalBuyQuantity, mean(TotalSellQuantity) as TotalSellQuantity INTO %s FROM %s GROUP BY time(%s)"
+	cQuery3m   = "SELECT FIRST(LastPrice) as Open, MAX(LastPrice) as High, MIN(LastPrice) as Low, LAST(LastPrice) as Close, mean(TotalBuyQuantity) as TotalBuyQuantity, mean(TotalSellQuantity) as TotalSellQuantity INTO %s FROM %s GROUP BY time(%s)"
 )
 
 //DB is the influx db struct
@@ -103,10 +103,7 @@ func (db DB) InsertTick(tickData *kiteticker.Tick) error {
 
 	tick := *tickData
 	fields := map[string]interface{}{
-		"Open":              tick.OHLC.Open,
-		"High":              tick.OHLC.High,
-		"Low":               tick.OHLC.Low,
-		"Close":             tick.OHLC.Close,
+		"LastPrice":         tick.LastPrice,
 		"TotalBuyQuantity":  tick.TotalBuyQuantity,
 		"TotalSellQuantity": tick.TotalSellQuantity,
 	}
