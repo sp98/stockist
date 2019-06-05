@@ -28,9 +28,10 @@ func Connect() (*kiteconnect.Client, string) {
 	// kiteSession := scrapper.NewWDSession()
 	kc := kiteconnect.New(apiKey)
 	// fmt.Println(kc.GetLoginURL())
+	// panic(1)
 	// authURL := kiteSession.GetKiteAuthURL(kc.GetLoginURL())
 	// fmt.Println(authURL)
-	// requestToken := "0w9iSbcyH57ofgk6nAfAdzeUNd7xf1LE"
+	// requestToken := "c7b8qdb6dcwc9obc&sess_id=ThmTF32Q"
 
 	// //Get user details and access token
 	// data, err := kc.GenerateSession(requestToken, apiSecret)
@@ -41,7 +42,7 @@ func Connect() (*kiteconnect.Client, string) {
 
 	// fmt.Println(data.AccessToken)
 	// panic(1)
-	accessToken := "6fbbf9hI4vM6T2fpYV1ylZEu7LtrFK0K"
+	accessToken := "7ZmXfD425zJOD4OSRU2z8wz9o7EOAwdo"
 	kc.SetAccessToken(accessToken)
 
 	// holdings, err := kc.GetHoldings()

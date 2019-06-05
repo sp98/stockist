@@ -48,17 +48,15 @@ func onConnect() {
 
 // Triggered when tick is recevived
 func onTick(tick kiteticker.Tick) {
-	log.Println("Tick Received frome Kite API")
-	StoreTickInDB(&tick)
+	// log.Println("Tick Received frome Kite API")
+	// StoreTickInDB(&tick)
 
-	// //Run with dummy data when market is closed!
-	// for i := 0; i < 1000; i++ {
-	// 	time.Sleep(2 * time.Second)
-	// 	dticks := dummyTicks()
-	// 	StoreTickInDB(dticks)
-	// }
-
-	//EnqueueTick(&tick)
+	//Run with dummy data when market is closed!
+	for i := 0; i < 1000; i++ {
+		time.Sleep(2 * time.Second)
+		dticks := dummyTicks()
+		StoreTickInDB(dticks)
+	}
 
 }
 
@@ -103,9 +101,8 @@ func StoreTickInDB(tick *kiteticker.Tick) {
 	log.Printf("Tick received: %+v\n", tick)
 	log.Println("---------------------------------")
 	db := storage.NewDB("http://localhost:8086", "stockist", "")
-	db.Measurement = fmt.Sprintf("%s_%s_%s", "ticks", strconv.FormatUint(uint64(tick.InstrumentToken), 10), storage.CurrentDate("01022006"))
-	//db.Measurement = "test"
-	db.InsertTick(tick)
+	db.Measurement = fmt.Sprintf("%s_%s", "ticks", strconv.FormatUint(uint64(tick.InstrumentToken), 10))
+	db.StoreTick(tick)
 
 }
 

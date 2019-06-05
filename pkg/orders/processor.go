@@ -10,12 +10,18 @@ import (
 	"github.com/stockist/pkg/storage"
 )
 
+var (
+	//DBUrl is the url to connect to the influx DB
+	DBUrl = "http://localhost:8086"
+	//StockDB is the main database to hold ticks information
+	StockDB = "stockist"
+)
+
 func initDB(order Order) error {
 	//Create continuous queries
-	db := storage.NewDB("http://localhost:8086", "stockist", "")
-	db.Measurement = fmt.Sprintf("%s_%s_%s", "ticks", order.InstrumentToken, storage.CurrentDate("01022006"))
-	db.TradeInterval = order.TradeInterval
-	err := db.CreateContinuousQuery()
+	db := storage.NewDB(DBUrl, StockDB, "")
+	db.Measurement = fmt.Sprintf("%s_%s", "ticks", order.InstrumentToken)
+	err := db.CreateTickCQ(order.TradeInterval, order.InstrumentToken)
 	if err != nil {
 		return err
 	}
@@ -47,15 +53,25 @@ func StartProcessing() {
 	}
 
 	// Create connection with Kite
-	_, accessToken := kite.Connect()
+	//_, accessToken := kite.Connect()
 	//Start Kite Ticker:
-	kite.StartTicker(accessToken)
+	//var wg sync.WaitGroup
+
+	for _, order := range *orders {
+		trade := &Trade{
+			Order: order,
+		}
+
+		trade.startAnalysis()
+	}
+
+	//kite.StartTicker(accessToken)
 
 }
 
 //GetOrders from the Orders Measurement in the databse
 func GetOrders() *[]Order {
-	db := storage.NewDB("http://localhost:8086", "stockist", "")
+	db := storage.NewDB(DBUrl, StockDB, "")
 	var orderRespsonse *client.Response
 	orderRespsonse, _ = db.GetOrders()
 
