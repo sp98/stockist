@@ -53,7 +53,7 @@ func StartProcessing() {
 	}
 
 	// Create connection with Kite
-	//_, accessToken := kite.Connect()
+	_, accessToken := kite.Connect()
 	//Start Kite Ticker:
 	//var wg sync.WaitGroup
 
@@ -62,10 +62,10 @@ func StartProcessing() {
 			Order: order,
 		}
 
-		trade.startAnalysis()
+		go trade.startAnalysis()
 	}
 
-	//kite.StartTicker(accessToken)
+	kite.StartTicker(accessToken)
 
 }
 
@@ -91,9 +91,7 @@ func GetOrders() *[]Order {
 				ord.TradeDate = fmt.Sprintf("%v", row[5])
 				ord.TradeInterval = fmt.Sprintf("%v", row[6])
 				ordList = append(ordList, *ord)
-
 			}
-
 		}
 
 	}
