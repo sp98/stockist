@@ -11,7 +11,7 @@ import (
 var (
 	createDB   = "CREATE DATABASE %s"
 	orderQuery = "SELECT * FROM Orders WHERE TradeDate=~/%s/"
-	ticksQuery = "SELECT * FROM %s"
+	ticksQuery = "SELECT * FROM %s ORDER BY time DESC"
 	tickCQ     = "CREATE CONTINUOUS QUERY %s ON %s BEGIN %s END"
 	tickCQTime = "SELECT FIRST(LastPrice) as Open, MAX(LastPrice) as High, MIN(LastPrice) as Low, LAST(LastPrice) as Close, mean(TotalBuyQuantity) as TotalBuyQuantity, mean(TotalSellQuantity) as TotalSellQuantity INTO %s FROM %s GROUP BY time(%s)"
 )
@@ -57,11 +57,15 @@ func (db DB) GetTicks() (*client.Response, error) {
 		Database: db.Name,
 	}
 
+	log.Println("Query - ", query.Command)
+
 	response, err := db.executeQuery(query)
 	if err != nil {
 		log.Fatalln("Error getting orders - ", err)
 		return nil, err
 	}
+	log.Printf("Response - %+v ", response)
+
 	return response, nil
 
 }

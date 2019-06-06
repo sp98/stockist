@@ -26,17 +26,17 @@ var (
 
 // Triggered when any error is raised
 func onError(err error) {
-	fmt.Println("Error: ", err)
+	log.Println("Error in Kite Trade API: ", err)
 }
 
 // Triggered when websocket connection is closed
 func onClose(code int, reason string) {
-	fmt.Println("Close: ", code, reason)
+	log.Println("Close: ", code, reason)
 }
 
 // Triggered when connection is established and ready to send and accept data
 func onConnect() {
-	fmt.Println("Connected")
+	log.Println("Connected with Kite Trading API")
 	log.Printf("Subcriptions - %+v\n", Subcriptions)
 	err := ticker.Subscribe(Subcriptions)
 	if err != nil {
@@ -49,30 +49,30 @@ func onConnect() {
 // Triggered when tick is recevived
 func onTick(tick kiteticker.Tick) {
 	// log.Println("Tick Received frome Kite API")
-	// StoreTickInDB(&tick)
+	StoreTickInDB(&tick)
 
 	//Run with dummy data when market is closed!
-	for i := 0; i < 1000; i++ {
-		time.Sleep(2 * time.Second)
-		dticks := dummyTicks()
-		StoreTickInDB(dticks)
-	}
+	// for i := 0; i < 1000; i++ {
+	// 	time.Sleep(2 * time.Second)
+	// 	dticks := dummyTicks()
+	// 	StoreTickInDB(dticks)
+	// }
 
 }
 
 // Triggered when reconnection is attempted which is enabled by default
 func onReconnect(attempt int, delay time.Duration) {
-	fmt.Printf("Reconnect attempt %d in %fs\n", attempt, delay.Seconds())
+	log.Printf("Reconnect attempt %d in %fs\n", attempt, delay.Seconds())
 }
 
 // Triggered when maximum number of reconnect attempt is made and the program is terminated
 func onNoReconnect(attempt int) {
-	fmt.Printf("Maximum no of reconnect attempt reached: %d", attempt)
+	log.Printf("Maximum no of reconnect attempt reached: %d", attempt)
 }
 
 // Triggered when order update is received
 func onOrderUpdate(order kiteconnect.Order) {
-	fmt.Printf("Order: %v ", order.OrderID)
+	log.Printf("Order: %v ", order.OrderID)
 }
 
 //StartTicker starts the websocket to receive kite ticker data
