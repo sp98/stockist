@@ -1,0 +1,102 @@
+Intraday trading rules:
+
+1.Be emotionless.Trade like a robot;only based on facts.
+2.Trade only the most liquid stocks,i.e where market depth is very good.
+3.Trade in small quantities.So that u won't be uncomfortable holding a position.
+4.Use stop-loss, positively.Put ur stop-loss in system and not just in ur mind.
+5.Once u get ur target square off ur position.Put ur screen off and enjoy ur day.
+6.Loose less and walk out...
+7.Never average on loosing stocks.
+8.Do your homework:Analyse based on previous day/week/month/six month data.
+
+
+How to choose stocks for intraday?
+- Decision should be made a day before.
+- Get the list of stocks that were top gainers today.
+- Identify those stocks that showed upward trend for the first time.
+- General tendency is that once moves up in a day, will continue that momentum in next few days as well.
+- So trade with those stocks that topped the market newly on that day.
+- Don't trade in first half an hour
+- Buy if the price is above the average traded price.
+
+
+
+Choose stocks for Intra day:
+- Should be of high volatilty
+
+When to buy and sell?
+Buy:
+- Always buy in downtrend (Lower highs and lower lows)
+- Never buy in upstrend or sidways trend.
+- Wait for 3-5 downtrend before buying a new trend.
+
+
+Sell
+- Always sell highter in uptrend (Higher highs and higher lows)
+- never sell in sideways trend.
+- Wait for 3-5 uptrends
+
+
+
+Strategy1:
+1. Buy:
+- Previous state should be Sold or "N/A"
+- Current Trend should be downtrend.
+- Current Trend count should be >= 3
+- Current Candle Stick should be Bullish Marubuzo, dozi or inverted hammer.
+-
+
+
+2. Sell:
+- Previous state should be Bought
+- Current Trend should be uptrend
+- Current Trend count should be >3
+- Current Candle Stick should be Bearish Marubuzo, dozi or shooting start.
+
+Queries:
+1. What is average traded price?
+
+
+
+In uptrend, when a previous swing low breaks and we get a lower swing high, the previous uptreand is over.
+
+
+Missed money is better than lost money!
+
+
+- Identify Stock's short term Trend
+https://www.youtube.com/watch?v=ZcsTUJsK55Y&list=PLA_3IDDrNPSGn6133Xmg4ksIQjdClSguw
+   What is exponential moving average?
+   What is ADX?
+   <20 Week trend
+   >40 strong trend.
+   Rising ADX means current trend is very strong.
+- Trade in stocks with vola
+
+
+Stragegy 1:
+- buy after a decline.
+- Sell after a rally.
+
+
+
+Strategy:
+1. Buy at LOW
+   (This strategy helps to get the lowest buy position)
+  - First bullish/BullishMarubuzo/dozi/BullishHammer candle after >=3 bearish candles and Current CS < Open and < lastdays low and current low (in the last bearish CS) should be the lowest so far.
+
+  Steps:
+  1. Select High Volatile stocks from NIFTY 100.
+  2. Analyse the stocks to see which will be in profit today:
+     - Should have the first day of profit yesterday
+     - Or ADX and MAE should show decline in the current downtrend.
+  3. Buying position:
+     - Current Candle == Bullish Candle, bullish Marobuzo, dozi
+     - Previous >=3 candles should be downtrend or bearish or decline.
+     - Current low should be lower than open and should be the lowest value till now.
+  4. Should be able to perform this analysis on 5 or more charts at the same time.
+
+
+
+  OpenPrice:
+  - Querty to Ticks_token_time table to get the 'Open' in the first entry after 9:15

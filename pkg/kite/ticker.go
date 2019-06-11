@@ -16,6 +16,9 @@ import (
 	kiteticker "github.com/zerodhatech/gokiteconnect/ticker"
 )
 
+//TDepth is the depth of the ticker.
+type TDepth kiteticker.Depth
+
 //Order details
 
 var (
@@ -48,7 +51,7 @@ func onConnect() {
 
 // Triggered when tick is recevived
 func onTick(tick kiteticker.Tick) {
-	// log.Println("Tick Received frome Kite API")
+	//log.Println("Tick Received frome Kite API")
 	StoreTickInDB(&tick)
 
 	//Run with dummy data when market is closed!
@@ -102,6 +105,7 @@ func StoreTickInDB(tick *kiteticker.Tick) {
 	//log.Println("---------------------------------")
 	db := storage.NewDB("http://localhost:8086", "stockist", "")
 	db.Measurement = fmt.Sprintf("%s_%s", "ticks", strconv.FormatUint(uint64(tick.InstrumentToken), 10))
+	//TDepth = &tick.Depth{}
 	db.StoreTick(tick)
 
 }

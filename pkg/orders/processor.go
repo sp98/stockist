@@ -14,7 +14,8 @@ var (
 	//DBUrl is the url to connect to the influx DB
 	DBUrl = "http://localhost:8086"
 	//StockDB is the main database to hold ticks information
-	StockDB = "stockist"
+	StockDB       = "stockist"
+	tradeOpenTime = "%sT03:45:05Z"
 )
 
 func initDB(order Order) error {
@@ -27,12 +28,6 @@ func initDB(order Order) error {
 	}
 
 	return nil
-}
-
-//Intialize a new order
-func Intialize() {
-	GetOrders()
-
 }
 
 //StartProcessing of a new order
@@ -54,8 +49,6 @@ func StartProcessing() {
 
 	// Create connection with Kite
 	_, accessToken := kite.Connect()
-	//Start Kite Ticker:
-	//var wg sync.WaitGroup
 
 	for _, order := range *orders {
 		trade := &Trade{
@@ -65,6 +58,7 @@ func StartProcessing() {
 		go trade.startAnalysis()
 	}
 
+	//Start Kite Ticker
 	kite.StartTicker(accessToken)
 
 }
@@ -100,8 +94,46 @@ func GetOrders() *[]Order {
 
 }
 
+func (trade Trade) getLowestPrice() float64 {
+	db := storage.NewDB(DBUrl, StockDB, "")
+	db.Measurement = fmt.Sprintf("%s_%s_%s", "ticks", trade.Order.InstrumentToken, trade.Order.TradeInterval)
+	lowest, _ := db.GetLowestLow()
+	return lowest
+}
+
+func (trade Trade) getHighestPrice() float64 {
+	db := storage.NewDB(DBUrl, StockDB, "")
+	db.Measurement = fmt.Sprintf("%s_%s_%s", "ticks", trade.Order.InstrumentToken, trade.Order.TradeInterval)
+	hightest, _ := db.GetMaxHigh()
+	return hightest
+}
+
+func (trade Trade) getOpenPrice() float64 {
+	db := storage.NewDB(DBUrl, StockDB, "")
+	db.Measurement = fmt.Sprintf("%s_%s_%s", "ticks", trade.Order.InstrumentToken, trade.Order.TradeInterval)
+	hightest, _ := db.GetMarketOpenPrice()
+	return hightest
+}
+
 func getUnit32(str string) uint32 {
 	// var a uint32
 	u, _ := strconv.ParseUint(str, 10, 32)
 	return uint32(u)
 }
+
+// func getTimeStamp(interval string) {
+
+// 	switch interval {
+// 	case "1m":
+// 		return 1
+
+// 	case "3m":
+// 		return 3
+
+// 	case "5m":
+// 		return 5
+
+// 	default:
+// 		return 0
+// 	}
+// }

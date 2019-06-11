@@ -31,7 +31,7 @@ func Connect() (*kiteconnect.Client, string) {
 	// panic(1)
 	// authURL := kiteSession.GetKiteAuthURL(kc.GetLoginURL())
 	// fmt.Println(authURL)
-	// requestToken := "c7b8qdb6dcwc9obc&sess_id=ThmTF32Q"
+	// requestToken := "lP31tDVdLIrtS8NL6avpV8r8U2d1DHwz"
 
 	// //Get user details and access token
 	// data, err := kc.GenerateSession(requestToken, apiSecret)
@@ -42,7 +42,7 @@ func Connect() (*kiteconnect.Client, string) {
 
 	// fmt.Println(data.AccessToken)
 	// panic(1)
-	accessToken := "b4xnjM305ErdwvQiFujg7kP199EQubeE"
+	accessToken := "U5fHzFXC7JHS4T5Ya9XfB2lResI5qrBv"
 	kc.SetAccessToken(accessToken)
 
 	// holdings, err := kc.GetHoldings()
