@@ -91,8 +91,42 @@ func (db DB) StoreTick(tickData *kiteticker.Tick) error {
 		"TotalSellQuantity": tick.TotalSellQuantity,
 	}
 	tags := map[string]string{
-		"InstrumentToken": fmt.Sprint(tick.InstrumentToken),
+		// "InstrumentToken": fmt.Sprint(tick.InstrumentToken),
 	}
+
+	err = db.executePointWrite(bp, db.Measurement, tags, fields, tickData.Timestamp.Time)
+	if err != nil {
+		log.Fatalln("Error storing tick data to db - ", err)
+		return err
+	}
+	return nil
+
+}
+
+//StorePreviousDayOHLC stores ohlc for previous day
+func (db DB) StorePreviousDayOHLC(tickData *kiteticker.Tick) error {
+	dbClient, _ := db.GetClient()
+	defer dbClient.Close()
+
+	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
+		Database:  db.Name,
+		Precision: "s",
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tick := *tickData
+	fields := map[string]interface{}{
+		"Open":              tick.OHLC.Open,
+		"High":              tick.OHLC.High,
+		"Low":               tick.OHLC.Low,
+		"Close":             tick.OHLC.Close,
+		"AverageTradePrice": tick.AverageTradePrice,
+		"TotalBuyQuantity":  tick.TotalBuyQuantity,
+		"TotalSellQuantity": tick.TotalSellQuantity,
+	}
+	tags := map[string]string{}
 
 	err = db.executePointWrite(bp, db.Measurement, tags, fields, tickData.Timestamp.Time)
 	if err != nil {

@@ -24,7 +24,8 @@ type TDepth kiteticker.Depth
 var (
 	ticker *kiteticker.Ticker
 	//Subcriptions to the instruments token 112129
-	Subcriptions = []uint32{}
+	Subcriptions   = []uint32{}
+	marketOpenTime = "%s 9:00:00"
 )
 
 // Triggered when any error is raised
@@ -101,12 +102,33 @@ func StartTicker(accestoken string) {
 
 //StoreTickInDB stors the tick in influx db
 func StoreTickInDB(tick *kiteticker.Tick) {
-	//log.Printf("Tick received: %+v\n", tick)
-	//log.Println("---------------------------------")
+	// log.Printf("Tick received: %+v\n", tick)
+	// log.Println("---------------------------------")
 	db := storage.NewDB("http://localhost:8086", "stockist", "")
-	db.Measurement = fmt.Sprintf("%s_%s", "ticks", strconv.FormatUint(uint64(tick.InstrumentToken), 10))
-	//TDepth = &tick.Depth{}
-	db.StoreTick(tick)
+	if isBeforeMarketOpen() {
+		db.Measurement = fmt.Sprintf("%s_%s_%s", "ticks", strconv.FormatUint(uint64(tick.InstrumentToken), 10), "5m")
+		log.Println("Storing Last Day's OHLC ")
+		db.StorePreviousDayOHLC(tick)
+	} else {
+		db.Measurement = fmt.Sprintf("%s_%s", "ticks", strconv.FormatUint(uint64(tick.InstrumentToken), 10))
+		//TDepth = &tick.Depth{}
+		db.StoreTick(tick)
+	}
+
+}
+
+// Check if the current time is before the market open time
+func isBeforeMarketOpen() bool {
+	loc, _ := time.LoadLocation("Asia/Kolkata")
+	mot := fmt.Sprintf(marketOpenTime, time.Now().Format("2006-01-02"))
+	//t, err := time.Parse("2006-01-02 15:04:05", mot)
+	t, err := time.ParseInLocation("2006-01-02 15:04:05", mot, loc)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return time.Now().Before(t)
 
 }
 

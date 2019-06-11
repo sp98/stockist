@@ -42,7 +42,7 @@ func Connect() (*kiteconnect.Client, string) {
 
 	// fmt.Println(data.AccessToken)
 	// panic(1)
-	accessToken := "U5fHzFXC7JHS4T5Ya9XfB2lResI5qrBv"
+	accessToken := "Q6c8ibgcsXPU9B5qaLZ85Ue2Rb0qGUJ3"
 	kc.SetAccessToken(accessToken)
 
 	// holdings, err := kc.GetHoldings()

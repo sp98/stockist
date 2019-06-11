@@ -9,17 +9,22 @@ import (
 // BuyLow identifies the lowest price where to stock could be bought.
 func (trade Trade) BuyLow() {
 	if trade.PreviousTrade == "SOLD" || len(trade.PreviousTrade) == 0 {
-		isBull, _ := isBullish(trade.Details)
+		isBull, bullTrend := isBullish(trade.Details)
 		dozi := isDozi(trade.Details[0])
 		bullishMaru := isBullishMarubuzo(trade.Details[0])
+		bearishMaru := isBearishMarubuzo(trade.Details[0])
 		bullishHammer := isBullishHammer(trade.Details[0])
+		bearishHammer := isBearishHammer(trade.Details[0])
 		shortTrend, trendCount := getShortTermTrend(trade.Details[1:])
 		bearTrend, bearCounts := isBearish(trade.Details[1:])
 		lhePattern := lowerHighsEngulfingPatternCount(trade.Details)
 		log.Printf("isBull - %v", isBull)
+		log.Printf("bullTrend - %v", bullTrend)
 		log.Printf("Dozi - %v", dozi)
 		log.Printf("bullishMaru - %v", bullishMaru)
+		log.Printf("bearishMaru - %v", bearishMaru)
 		log.Printf("bullishHammer - %v", bullishHammer)
+		log.Printf("bearishHammer - %v", bearishHammer)
 		log.Printf("shortTrend - %v", shortTrend)
 		log.Printf("trendCount - %v", trendCount)
 		log.Printf("bearTrend - %v", bearTrend)
@@ -29,8 +34,8 @@ func (trade Trade) BuyLow() {
 		if isBull || bullishMaru || bullishHammer || dozi {
 			if (shortTrend == "decline" && trendCount >= 3) || (bearTrend && bearCounts >= 3) || lhePattern >= 5 {
 				//Good to buy now with stop loss
-				// Previous low should be less than open and should be the lowest (and should be lower than last day's low?)
-				if trade.Details[1].Low < trade.Details[len(trade.Details)-1].Open && trade.Details[1].Low >= trade.getLowestPrice() {
+				// Previous low should be the lowest so far. Lower than both today's low and previous day's low.
+				if trade.Details[1].Low <= trade.getLowestPrice() {
 					log.Print("Best time to buy this stock")
 					db := storage.NewDB(DBUrl, StockDB, "trade")
 					db.InsertTrade(trade.Order.InstrumentToken, "BUY")

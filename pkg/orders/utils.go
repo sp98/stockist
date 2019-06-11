@@ -1,9 +1,5 @@
 package orders
 
-import (
-	"log"
-)
-
 func isBullish(tradeDetails []TradeDetails) (bool, int) {
 
 	isBull := true
@@ -81,7 +77,6 @@ func isBearishMarubuzo(td TradeDetails) bool {
 }
 
 func isDozi(td TradeDetails) bool {
-	log.Printf("Data - %+v", td)
 	if td.Open == td.Close && (td.High != td.Open || td.Low != td.Open) {
 		return true
 	}

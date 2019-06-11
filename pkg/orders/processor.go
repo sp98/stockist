@@ -30,11 +30,12 @@ func initDB(order Order) error {
 	return nil
 }
 
-//StartProcessing of a new order
+//StartProcessing starts the order processing for the day!
 func StartProcessing() {
 	log.Println("Start Processing Order")
 	// Check for valid orders to be processed today
-	orders := GetOrders()
+	//orders := GetOrders()
+	orders := getOrdersList()
 	if orders == nil {
 		log.Println("No Orders to execute today")
 		return
@@ -120,20 +121,3 @@ func getUnit32(str string) uint32 {
 	u, _ := strconv.ParseUint(str, 10, 32)
 	return uint32(u)
 }
-
-// func getTimeStamp(interval string) {
-
-// 	switch interval {
-// 	case "1m":
-// 		return 1
-
-// 	case "3m":
-// 		return 3
-
-// 	case "5m":
-// 		return 5
-
-// 	default:
-// 		return 0
-// 	}
-// }

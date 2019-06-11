@@ -32,3 +32,27 @@ type TickData struct {
 // Depth holds the ticker depth data
 type Depth struct {
 }
+
+var orderData = [][]string{
+	{"YESBANK", "136357892", "NSE", "5m", "20000", "2019-06-11"},
+	{"IBULHSGFIN", "7712001", "NSE", "5m", "20000", "2019-06-11"},
+	{"ZEEL", "975873", "NSE", "5m", "20000", "2019-06-11"},
+	{"BANKBARODA", "1195009", "NSE", "5m", "20000", "2019-06-11"},
+}
+
+func getOrdersList() *[]Order {
+	ordList := []Order{}
+	for _, order := range orderData {
+		ord := Order{}
+		ord.InstrumentName = order[0]
+		ord.InstrumentToken = order[1]
+		ord.Exchange = order[2]
+		ord.TradeInterval = order[3]
+		ord.TradeAmount = order[4]
+		ord.TradeDate = order[5]
+		ordList = append(ordList, ord)
+	}
+
+	return &ordList
+
+}

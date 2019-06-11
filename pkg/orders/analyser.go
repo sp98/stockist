@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	marketCloseTime      = "%s 23:59:00"
+	marketCloseTime      = "%s 15:30:00"
 	marketActualOpenTime = "%s 09:13:00 MST"
 	tstringFormat        = "2006-01-02 15:04:05"
 	layOut               = "2006-01-02 15:04:05"
@@ -19,12 +19,9 @@ var (
 
 //Trade holds the currently trading order details
 type Trade struct {
-	Order             Order
-	Details           []TradeDetails
-	IsBullish         bool
-	CurrentTrend      string
-	CurrentTrendCount int
-	PreviousTrade     string
+	Order         Order
+	Details       []TradeDetails
+	PreviousTrade string
 }
 
 //TradeDetails is the aggregate of the trade
@@ -145,8 +142,6 @@ func (trade *Trade) getOverallTrend(currentHigh float64) string {
 
 //Gives the trend before the current Candlestick pattern
 func getShortTermTrend(tradeDetails []TradeDetails) (string, int) {
-
-	log.Printf("DAta - %+v", tradeDetails)
 	trend := ""
 	trendCount := 0
 
