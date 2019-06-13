@@ -11,8 +11,10 @@ import (
 )
 
 var (
-	createDB              = "CREATE DATABASE %s"
-	orderQuery            = "SELECT * FROM Orders WHERE TradeDate=~/%s/"
+	createDB   = "CREATE DATABASE %s"
+	orderQuery = "SELECT * FROM Orders WHERE TradeDate=~/%s/"
+	tradeQuery = `select * from trade where InstrumentToken='%s' ORDER BY time DESC limit 1`
+
 	firstCandleStickQuery = `select * from %s limit 1`
 	maxHighQuery          = "SELECT max(High) as Highest from %s"
 	minLowQuery           = "SELECT min(Low) as Lowest from %s"
@@ -243,5 +245,33 @@ func (db DB) InsertTrade(tokenID string, trade string) error {
 		return err
 	}
 	return nil
+
+}
+
+//GetLastTrade gives the last trade done on an Instrument
+func (db DB) GetLastTrade(tokenID string) (string, error) {
+	dbClient, _ := db.GetClient()
+	defer dbClient.Close()
+	query := client.Query{
+		//Command:  fmt.Sprintf(lowestLowQuery, "ticks_3699201_1m"),
+		Command:  fmt.Sprintf(tradeQuery, tokenID),
+		Database: db.Name,
+	}
+	//log.Println("Query - ", query.Command)
+	response, err := db.executeQuery(query)
+	if err != nil {
+		log.Fatalln("Error getting orders - ", err)
+		// return nil, err
+	}
+	// return response, nil
+	if len(response.Results[0].Series) == 0 {
+		return "", fmt.Errorf("No data found")
+	}
+
+	log.Printf("Response - %+v", response.Results)
+	lastTrade := response.Results[0].Series[0].Values[0][2]
+	slastTrade := fmt.Sprintf("%v", lastTrade)
+	fmt.Println(slastTrade)
+	return slastTrade, nil
 
 }

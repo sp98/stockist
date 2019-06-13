@@ -96,7 +96,7 @@ func (trade *Trade) Analyse() {
 	trade.Details = *tradeDetails
 
 	//trade.StrategyOne()
-	if len(trade.Details) > 2 {
+	if len(trade.Details) > 3 {
 		trade.BuyLow()
 	}
 }

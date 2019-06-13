@@ -20,15 +20,30 @@ func TestGetMaxHigh(t *testing.T) {
 
 }
 
-func TestGetLowest(t *testing.T) {
+// func TestGetLowest(t *testing.T) {
+// 	db := getDB()
+// 	db.GetLowest()
+// 	t.Error("hi")
+
+// }
+
+// func TestGetOpen(t *testing.T) {
+// 	db := getDB()
+// 	db.GetMarketOpenPrice("2019-06-07T09:11:00Z")
+
+// }
+
+func TestInsertTrade(t *testing.T) {
 	db := getDB()
-	db.GetLowest()
-	t.Error("hi")
+	db.Measurement = "trade"
+	db.InsertTrade("12345", "BUY")
+	//t.Error("hi")
 
 }
 
-func TestGetOpen(t *testing.T) {
+func TestGetLastTrade(t *testing.T) {
 	db := getDB()
-	db.GetMarketOpenPrice("2019-06-07T09:11:00Z")
+	res, _ := db.GetLastTrade("12345")
+	t.Error(res)
 
 }

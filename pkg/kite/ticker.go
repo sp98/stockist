@@ -76,7 +76,7 @@ func onNoReconnect(attempt int) {
 
 // Triggered when order update is received
 func onOrderUpdate(order kiteconnect.Order) {
-	log.Printf("Order: %v ", order.OrderID)
+	log.Printf("Order: %+v ", order)
 }
 
 //StartTicker starts the websocket to receive kite ticker data
