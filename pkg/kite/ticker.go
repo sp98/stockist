@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/stockist/pkg/storage"
+	"github.com/stockist1/pkg/storage"
 	kiteconnect "github.com/zerodhatech/gokiteconnect"
 	kiteticker "github.com/zerodhatech/gokiteconnect/ticker"
 )
@@ -80,7 +80,7 @@ func onOrderUpdate(order kiteconnect.Order) {
 }
 
 //StartTicker starts the websocket to receive kite ticker data
-func StartTicker(accestoken string) {
+func StartTicker(apiKey, accestoken string) {
 	// Create a new Kite connect instance
 
 	// Create new Kite ticker instance

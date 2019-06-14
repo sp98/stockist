@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	client "github.com/influxdata/influxdb1-client/v2"
+	client "github.com/orourkedd/influxdb1-client/client"
 )
 
 /*

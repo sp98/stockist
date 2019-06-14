@@ -1,4 +1,4 @@
-package orders
+package instrument
 
 import "github.com/ashwanthkumar/slack-go-webhook"
 import "fmt"

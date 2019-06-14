@@ -1,27 +1,27 @@
-package orders
+package instrument
 
 import (
 	"fmt"
 	"log"
 
-	"github.com/stockist/pkg/storage"
+	"github.com/stockist1/pkg/storage"
 )
 
 // BuyLow identifies the lowest price where to stock could be bought.
-func (trade Trade) BuyLow() {
+func (cs CandleStick) BuyLow() {
 
-	lastTrade := getLastTrade(trade.Order.InstrumentToken)
+	lastTrade := getLastTrade(cs.Instrument.Token)
 	log.Printf("Last Trade : %v", lastTrade)
 	if lastTrade == "SOLD" || len(lastTrade) == 0 {
-		isBull, bullTrend := isBullish(trade.Details)
-		dozi := isDozi(trade.Details[0])
-		bullishMaru := isBullishMarubuzo(trade.Details[0])
-		bearishMaru := isBearishMarubuzo(trade.Details[0])
-		bullishHammer := isBullishHammer(trade.Details[0])
-		bearishHammer := isBearishHammer(trade.Details[0])
-		shortTrend, trendCount := getShortTermTrend(trade.Details[1:])
-		bearTrend, bearCounts := isBearish(trade.Details[1:])
-		lhePattern := lowerHighsEngulfingPatternCount(trade.Details)
+		isBull, bullTrend := isBullish(cs.Details)
+		dozi := isDozi(cs.Details[0])
+		bullishMaru := isBullishMarubuzo(cs.Details[0])
+		bearishMaru := isBearishMarubuzo(cs.Details[0])
+		bullishHammer := isBullishHammer(cs.Details[0])
+		bearishHammer := isBearishHammer(cs.Details[0])
+		shortTrend, trendCount := getShortTermTrend(cs.Details[1:])
+		bearTrend, bearCounts := isBearish(cs.Details[1:])
+		lhePattern := lowerHighsEngulfingPatternCount(cs.Details)
 		log.Printf("isBull - %v", isBull)
 		log.Printf("bullTrend - %v", bullTrend)
 		log.Printf("Dozi - %v", dozi)
@@ -39,25 +39,25 @@ func (trade Trade) BuyLow() {
 			if (shortTrend == "decline" && trendCount >= 3) || (bearTrend && bearCounts >= 3) || lhePattern >= 5 {
 				//Good to buy now with stop loss
 				// Previous low should be the lowest so far. Lower than both today's low and previous day's low.
-				if trade.Details[1].Low <= trade.getLowestPrice() {
+				if cs.Details[1].Low <= cs.getLowestPrice() {
 					//Create some alert here
-					SendAlerts(fmt.Sprintf("BUY %s-%s", trade.Order.InstrumentName, trade.Order.Exchange))
+					SendAlerts(fmt.Sprintf("BUY %s-%s", cs.Instrument.Token, cs.Instrument.Exchange))
 				}
 			}
 
 		}
 
 	} else if lastTrade == "BOUGHT" {
-		isBear, bearCount := isBearish(trade.Details)
-		dozi := isDozi(trade.Details[0])
-		bullishMaru := isBullishMarubuzo(trade.Details[0])
-		bearishMaru := isBearishMarubuzo(trade.Details[0])
-		bullishHammer := isBullishHammer(trade.Details[0])
-		bearishHammer := isBearishHammer(trade.Details[0])
-		shortTrend, trendCount := getShortTermTrend(trade.Details[1:])
-		bearTrend, bearCounts := isBearish(trade.Details[1:])
-		bullTrend, bullCounts := isBullish(trade.Details[1:])
-		hhePattern := higherLowsEngulfingPatternCount(trade.Details)
+		isBear, bearCount := isBearish(cs.Details)
+		dozi := isDozi(cs.Details[0])
+		bullishMaru := isBullishMarubuzo(cs.Details[0])
+		bearishMaru := isBearishMarubuzo(cs.Details[0])
+		bullishHammer := isBullishHammer(cs.Details[0])
+		bearishHammer := isBearishHammer(cs.Details[0])
+		shortTrend, trendCount := getShortTermTrend(cs.Details[1:])
+		bearTrend, bearCounts := isBearish(cs.Details[1:])
+		bullTrend, bullCounts := isBullish(cs.Details[1:])
+		hhePattern := higherLowsEngulfingPatternCount(cs.Details)
 		log.Printf("isBear - %v", isBear)
 		log.Printf("bearCount - %v", bearCount)
 		log.Printf("Dozi - %v", dozi)
@@ -75,10 +75,10 @@ func (trade Trade) BuyLow() {
 			if (shortTrend == "rally" && trendCount >= 3) || (bullTrend && bullCounts >= 3) || hhePattern >= 5 {
 				//Good to SELL now with stop loss
 				// Previous low should be the lowest so far. Lower than both today's low and previous day's low.
-				if trade.Details[1].Low <= trade.getLowestPrice() {
+				if cs.Details[1].Low <= cs.getLowestPrice() {
 					//updateTradeInDB(trade.Order.InstrumentToken, "BUY")
 					//Create some alert here
-					SendAlerts(fmt.Sprintf("SELL %s", trade.Order.InstrumentName))
+					SendAlerts(fmt.Sprintf("SELL  %s-%s", cs.Instrument.Token, cs.Instrument.Exchange))
 				}
 			}
 

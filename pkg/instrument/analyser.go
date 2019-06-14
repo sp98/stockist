@@ -1,4 +1,4 @@
-package orders
+package instrument
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/stockist/pkg/storage"
+	"github.com/stockist1/pkg/storage"
 )
 
 var (
@@ -17,39 +17,36 @@ var (
 	influxLayout         = "2006-01-02T15:04:05Z"
 )
 
-//Trade holds the currently trading order details
-type Trade struct {
-	Order         Order
-	Details       []TradeDetails
+//CandleStick holds the currently trading order details
+type CandleStick struct {
+	Instrument    Instrument
+	Details       []CandleStickDetails
 	PreviousTrade string
 }
 
-//TradeDetails is the aggregate of the trade
-type TradeDetails struct {
+//CandleStickDetails is the aggregate of the trade
+type CandleStickDetails struct {
 	AverageTradedPrice float64
 	Close              float64
 	High               float64
 	Low                float64
 	Open               float64
-	TotalBuyQuantity   float64
-	TotalSellQuantity  float64
 }
 
-func (trade *Trade) startAnalysis() error {
-	log.Printf("--- Begin Analysis for %s ----", trade.Order.InstrumentName)
-
-	interval := getInterval(trade.Order.TradeInterval)
+func (cs *CandleStick) startAnalysis() error {
+	log.Printf("--- Begin Analysis for %s ----", cs.Instrument.Name)
+	interval := getInterval(cs.Instrument.Interval)
 	if interval == 0 {
 		log.Fatal("invalid order interval ")
 		//return error here
 	}
 
-	mct, err := parseTime(layOut, fmt.Sprintf(marketCloseTime, trade.Order.TradeDate))
+	mct, err := parseTime(layOut, fmt.Sprintf(marketCloseTime, getDate()))
 	if err != nil {
 		return err
 	}
 
-	if stop, _ := trade.stopAnalysis(mct, false); stop {
+	if stop, _ := cs.stopAnalysis(mct, false); stop {
 		log.Printf("Can't start analysis. Already past market closing time %+v", mct)
 		return nil
 	}
@@ -62,10 +59,10 @@ func (trade *Trade) startAnalysis() error {
 
 	t := time.NewTicker(time.Minute * time.Duration(interval))
 
-	log.Printf("Analysis Start Time: %+v ::: Analysis Stop Time: %+v", time.Now(), fmt.Sprintf(marketCloseTime, trade.Order.TradeDate))
+	log.Printf("Analysis Start Time: %+v ::: Analysis Stop Time: %+v", time.Now(), fmt.Sprintf(marketCloseTime, getDate()))
 
 	for alive := true; alive; {
-		res, _ := trade.stopAnalysis(mct, true)
+		res, _ := cs.stopAnalysis(mct, true)
 		if res {
 			cT, _ := parseTime(layOut, time.Now().Format(tstringFormat))
 			log.Printf("Stopping Analysis for Today at %+v", cT)
@@ -78,59 +75,57 @@ func (trade *Trade) startAnalysis() error {
 		log.Printf("Starting Analysis at %+v", stamp.Format(tstringFormat))
 		// do actual analysis here
 		time.Sleep(time.Second * 3)
-		trade.Analyse()
+		cs.Analyse()
 	}
 	return nil
 }
 
 //Analyse the trade
-func (trade *Trade) Analyse() {
+func (cs *CandleStick) Analyse() {
 
-	tradeDetails := trade.getTicks()
-	log.Printf("Aggregate results - %+v", tradeDetails)
+	csList := cs.getTicks()
+	log.Printf("Aggregate results - %+v", csList)
 
-	if len(*tradeDetails) == 0 {
+	if len(*csList) == 0 {
 		log.Println("Error: Trade details is empty!")
 		return
 	}
-	trade.Details = *tradeDetails
+	cs.Details = *csList
 
 	//trade.StrategyOne()
-	if len(trade.Details) > 3 {
-		trade.BuyLow()
+	if len(cs.Details) > 3 {
+		cs.BuyLow()
 	}
 }
 
-func (trade *Trade) getTicks() *[]TradeDetails {
+func (cs *CandleStick) getTicks() *[]CandleStickDetails {
 	db := storage.NewDB(DBUrl, StockDB, "")
-	db.Measurement = fmt.Sprintf("%s_%s_%s", "ticks", trade.Order.InstrumentToken, trade.Order.TradeInterval)
+	db.Measurement = fmt.Sprintf("%s_%s_%s", "ticks", cs.Instrument.Token, cs.Instrument.Interval)
 	orderRespsonse, _ := db.GetTicks()
-	var tradeDetailsList []TradeDetails
+	var csDetailList []CandleStickDetails
 	for _, results := range orderRespsonse.Results {
 		for _, rows := range results.Series {
-			td := &TradeDetails{}
+			cs := &CandleStickDetails{}
 			for _, row := range rows.Values {
-				td.AverageTradedPrice, _ = strconv.ParseFloat(fmt.Sprintf("%v", row[1]), 64)
-				td.Close, _ = strconv.ParseFloat(fmt.Sprintf("%v", row[2]), 64)
-				td.High, _ = strconv.ParseFloat(fmt.Sprintf("%v", row[3]), 64)
-				td.Low, _ = strconv.ParseFloat(fmt.Sprintf("%v", row[4]), 64)
-				td.Open, _ = strconv.ParseFloat(fmt.Sprintf("%v", row[5]), 64)
-				td.TotalBuyQuantity, _ = strconv.ParseFloat(fmt.Sprintf("%v", row[6]), 64)
-				td.TotalSellQuantity, _ = strconv.ParseFloat(fmt.Sprintf("%v", row[7]), 64)
-				tradeDetailsList = append(tradeDetailsList, *td)
+				cs.AverageTradedPrice, _ = strconv.ParseFloat(fmt.Sprintf("%v", row[1]), 64)
+				cs.Close, _ = strconv.ParseFloat(fmt.Sprintf("%v", row[2]), 64)
+				cs.High, _ = strconv.ParseFloat(fmt.Sprintf("%v", row[3]), 64)
+				cs.Low, _ = strconv.ParseFloat(fmt.Sprintf("%v", row[4]), 64)
+				cs.Open, _ = strconv.ParseFloat(fmt.Sprintf("%v", row[5]), 64)
+				csDetailList = append(csDetailList, *cs)
 			}
 
 		}
 
 	}
 
-	return &tradeDetailsList
+	return &csDetailList
 }
 
-func (trade *Trade) getOverallTrend(currentHigh float64) string {
+func (cs *CandleStick) getOverallTrend(currentHigh float64) string {
 
 	db := storage.NewDB(DBUrl, StockDB, "")
-	db.Measurement = fmt.Sprintf("%s_%s_%s", "ticks", trade.Order.InstrumentToken, trade.Order.TradeInterval)
+	db.Measurement = fmt.Sprintf("%s_%s_%s", "ticks", cs.Instrument.Token, cs.Instrument.Interval)
 	maxHigh, _ := db.GetMaxHigh()
 	if maxHigh > currentHigh {
 		return "downtrend" // downtrend: if current high is not the maximum high.
@@ -141,18 +136,18 @@ func (trade *Trade) getOverallTrend(currentHigh float64) string {
 }
 
 //Gives the trend before the current Candlestick pattern
-func getShortTermTrend(tradeDetails []TradeDetails) (string, int) {
+func getShortTermTrend(csDetails []CandleStickDetails) (string, int) {
 	trend := ""
 	trendCount := 0
 
-	if len(tradeDetails) < 2 {
+	if len(csDetails) < 2 {
 		return trend, trendCount
 	}
 
-	if tradeDetails[0].High > tradeDetails[1].High && tradeDetails[0].Low > tradeDetails[1].Low {
+	if csDetails[0].High > csDetails[1].High && csDetails[0].Low > csDetails[1].Low {
 		trend = "rally"
-		for i := 0; i < len(tradeDetails)-1; i++ {
-			if tradeDetails[i].High > tradeDetails[i+1].High && tradeDetails[i].Low > tradeDetails[i+1].Low {
+		for i := 0; i < len(csDetails)-1; i++ {
+			if csDetails[i].High > csDetails[i+1].High && csDetails[i].Low > csDetails[i+1].Low {
 				trendCount = trendCount + 1
 				continue
 			}
@@ -160,10 +155,10 @@ func getShortTermTrend(tradeDetails []TradeDetails) (string, int) {
 		}
 		return trend, trendCount
 
-	} else if tradeDetails[0].High < tradeDetails[1].High && tradeDetails[0].Low < tradeDetails[1].Low {
+	} else if csDetails[0].High < csDetails[1].High && csDetails[0].Low < csDetails[1].Low {
 		trend = "decline"
-		for i := 0; i < len(tradeDetails)-1; i++ {
-			if tradeDetails[i].High < tradeDetails[i+1].High && tradeDetails[i].Low < tradeDetails[i+1].Low {
+		for i := 0; i < len(csDetails)-1; i++ {
+			if csDetails[i].High < csDetails[i+1].High && csDetails[i].Low < csDetails[i+1].Low {
 				trendCount = trendCount + 1
 				continue
 			}
@@ -193,7 +188,7 @@ func getInterval(i string) int {
 
 }
 
-func (trade Trade) stopAnalysis(closingTime time.Time, doWait bool) (bool, error) {
+func (cs CandleStick) stopAnalysis(closingTime time.Time, doWait bool) (bool, error) {
 	if doWait {
 		time.Sleep(time.Second * 2)
 	}
@@ -248,4 +243,9 @@ func getActualMarketOpenTime(date string) (string, error) {
 	}
 	return t.UTC().Format("2006-01-02T15:04:05Z"), nil
 
+}
+
+func getDate() string {
+	currentTime := time.Now()
+	return currentTime.Format("2006-01-02")
 }

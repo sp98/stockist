@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	client "github.com/influxdata/influxdb1-client/v2"
+	client "github.com/orourkedd/influxdb1-client/client"
 	kiteticker "github.com/zerodhatech/gokiteconnect/ticker"
 )
 
@@ -20,7 +20,7 @@ var (
 	minLowQuery           = "SELECT min(Low) as Lowest from %s"
 	ticksQuery            = "SELECT * FROM %s ORDER BY time DESC"
 	tickCQ                = "CREATE CONTINUOUS QUERY %s ON %s BEGIN %s END"
-	tickCQTime            = "SELECT FIRST(LastPrice) as Open, MAX(LastPrice) as High, MIN(LastPrice) as Low, LAST(LastPrice) as Close, last(AverageTradePrice) as AverageTradePrice, mean(TotalBuyQuantity) as TotalBuyQuantity, mean(TotalSellQuantity) as TotalSellQuantity INTO %s FROM %s GROUP BY time(%s)"
+	tickCQTime            = "SELECT FIRST(LastPrice) as Open, MAX(LastPrice) as High, MIN(LastPrice) as Low, LAST(LastPrice) as Close, last(AverageTradePrice) as AverageTradePrice INTO %s FROM %s GROUP BY time(%s)"
 )
 
 // CreateTickCQ creates a continuous query on Tick Measurement.

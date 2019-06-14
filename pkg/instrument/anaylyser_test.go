@@ -1,4 +1,4 @@
-package orders
+package instrument
 
 import (
 	"testing"
