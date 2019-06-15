@@ -8,6 +8,8 @@ Handling Kite connections and related operations here, like:
 */
 
 import (
+	"fmt"
+
 	kiteconnect "github.com/zerodhatech/gokiteconnect"
 )
 
@@ -31,18 +33,18 @@ func Connect() (*kiteconnect.Client, string) {
 	// panic(1)
 	// authURL := kiteSession.GetKiteAuthURL(kc.GetLoginURL())
 	// fmt.Println(authURL)
-	// requestToken := "lP31tDVdLIrtS8NL6avpV8r8U2d1DHwz"
+	requestToken := "OjScADnHKJOFzXccCkXf0lAHbSPJZlmr"
 
-	// //Get user details and access token
-	// data, err := kc.GenerateSession(requestToken, apiSecret)
-	// if err != nil {
-	// 	fmt.Printf("Error: %v", err)
+	//Get user details and access token
+	data, err := kc.GenerateSession(requestToken, apiSecret)
+	if err != nil {
+		fmt.Printf("Error: %v", err)
 
-	// }
+	}
 
-	// fmt.Println(data.AccessToken)
-	// panic(1)
-	accessToken := "MQADlQZ6c8lbMNmROtfAzjQX01IAAPe1"
+	fmt.Println(data.AccessToken)
+	panic(1)
+	accessToken := "h5zlKQ4aK5Iv6X6xXzlXNe7ueAxy41sy"
 	kc.SetAccessToken(accessToken)
 
 	// holdings, err := kc.GetHoldings()

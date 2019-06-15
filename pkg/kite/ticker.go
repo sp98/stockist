@@ -16,6 +16,12 @@ import (
 	kiteticker "github.com/zerodhatech/gokiteconnect/ticker"
 )
 
+var (
+	DBUrl = "http://localhost:8086"
+	//StockDB is the main database to hold ticks information
+	StockDB = "stockist"
+)
+
 //TDepth is the depth of the ticker.
 type TDepth kiteticker.Depth
 
@@ -77,6 +83,14 @@ func onNoReconnect(attempt int) {
 // Triggered when order update is received
 func onOrderUpdate(order kiteconnect.Order) {
 	log.Printf("Order: %+v ", order)
+	if order.Status == "COMPLETE" && order.TransactionType == "BUY" && isInstrumentSubscribed(order.InstrumentToken) {
+		updateTradeInDB("BOUGHT", strconv.FormatUint(uint64(order.InstrumentToken), 10))
+	} else if order.Status == "COMPLETE" && order.TransactionType == "SELL" && isInstrumentSubscribed(order.InstrumentToken) {
+		updateTradeInDB("SOLD", strconv.FormatUint(uint64(order.InstrumentToken), 10))
+	} else if order.Status == "REJECTED" && isInstrumentSubscribed(order.InstrumentToken) {
+		log.Printf("Last Order Got Rejected")
+	}
+
 }
 
 //StartTicker starts the websocket to receive kite ticker data
@@ -130,6 +144,24 @@ func isBeforeMarketOpen() bool {
 
 	return time.Now().Before(t)
 
+}
+
+func updateTradeInDB(option, instToken string) {
+	db := storage.NewDB(DBUrl, StockDB, "trade")
+	db.InsertTrade(instToken, option)
+
+}
+
+func isInstrumentSubscribed(instToken uint32) bool {
+	for _, subscribedInst := range Subcriptions {
+		if instToken == subscribedInst {
+			//log.Println("Token Matched")
+			return true
+		}
+
+	}
+	//log.Println("Token didn't match!")
+	return false
 }
 
 // func tickToMap(tick *kiteticker.Tick) map[string]interface{} {

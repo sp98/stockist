@@ -60,6 +60,7 @@ func (trade *Trade) startAnalysis() error {
 		time.Sleep(time.Second * time.Duration(wt))
 	}
 
+	//trade.Analyse()
 	t := time.NewTicker(time.Minute * time.Duration(interval))
 
 	log.Printf("Analysis Start Time: %+v ::: Analysis Stop Time: %+v", time.Now(), fmt.Sprintf(marketCloseTime, trade.Order.TradeDate))

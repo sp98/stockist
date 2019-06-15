@@ -15,6 +15,7 @@ func getDB() *DB {
 }
 func TestGetMaxHigh(t *testing.T) {
 	db := getDB()
+	db.Measurement = "ticks_3050241_5m"
 	db.GetMaxHigh()
 	t.Error("hi")
 
@@ -43,7 +44,7 @@ func TestInsertTrade(t *testing.T) {
 
 func TestGetLastTrade(t *testing.T) {
 	db := getDB()
-	res, _ := db.GetLastTrade("12345")
+	res, _ := db.GetLastTrade("7712001")
 	t.Error(res)
 
 }

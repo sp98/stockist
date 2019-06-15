@@ -74,23 +74,20 @@ func (trade Trade) BuyLow() {
 		if isBear || bearishMaru || dozi {
 			if (shortTrend == "rally" && trendCount >= 3) || (bullTrend && bullCounts >= 3) || hhePattern >= 5 {
 				//Good to SELL now with stop loss
-				// Previous low should be the lowest so far. Lower than both today's low and previous day's low.
-				if trade.Details[1].Low <= trade.getLowestPrice() {
+				// Last High should be higher than last days high.
+				// Last High should
+				SendAlerts(fmt.Sprintf("SELL %s", trade.Order.InstrumentName))
+
+				if trade.Details[1].High > trade.getHighestPrice() {
 					//updateTradeInDB(trade.Order.InstrumentToken, "BUY")
 					//Create some alert here
-					SendAlerts(fmt.Sprintf("SELL %s", trade.Order.InstrumentName))
+					SendAlerts(fmt.Sprintf("DEFINITE SELL %s", trade.Order.InstrumentName))
 				}
 			}
 
 		}
 
 	}
-}
-
-func updateTradeInDB(option, instToken string) {
-	db := storage.NewDB(DBUrl, StockDB, "trade")
-	db.InsertTrade(instToken, option)
-
 }
 
 func getLastTrade(instToken string) string {

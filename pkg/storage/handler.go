@@ -153,11 +153,12 @@ func (db DB) GetMaxHigh() (float64, error) {
 		log.Fatalln("Error getting orders - ", err)
 		// return nil, err
 	}
+	//fmt.Printf("res - %+v", response)
 	// return response, nil
 	if len(response.Results) == 0 {
 		return 0, fmt.Errorf("Error finding max High from the aggregared query")
 	}
-	highestHigh := response.Results[0].Series[0].Values[1]
+	highestHigh := response.Results[0].Series[0].Values[0][1]
 	hightestHighf, _ := strconv.ParseFloat(fmt.Sprintf("%v", highestHigh), 64)
 	return hightestHighf, nil
 
