@@ -8,6 +8,7 @@ Handle Kite Ticket relation operations.
 import (
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"time"
 
@@ -22,14 +23,14 @@ const (
 	//DBUrl is host name for influx db
 	DBUrl = "http://localhost:8086"
 	//StockDB is the main database to hold ticks information
-	StockDB          = "stockist"
-	apiKey    string = "c7b8qdb6dcwc9obc"
-	apiSecret string = "ldxrh0w77x88zyhyuivbbr2svm2kml17"
+	StockDB = "stockist"
 )
 
 var (
 	ticker         *kiteticker.Ticker
 	marketOpenTime = "%s 9:00:00"
+	apiKey         = os.Getenv("APIKEY")
+	apiSecret      = os.Getenv("APISECRET")
 )
 
 // Triggered when any error is raised

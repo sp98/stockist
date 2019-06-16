@@ -1,12 +1,17 @@
 package instrument
 
+import "os"
+
 const (
 	marketCloseTime      = "%s 15:30:00"
 	marketActualOpenTime = "%s 09:13:00 MST"
 	tstringFormat        = "2006-01-02 15:04:05"
 	layOut               = "2006-01-02 15:04:05"
 	influxLayout         = "2006-01-02T15:04:05Z"
-	accessToken          = "TtSuNlGuMI4E44zNm0gYW3Q31RgNZ7Uj"
+)
+
+var (
+	accessToken = os.Getenv("ACCESSTOKEN")
 )
 
 var data = [][]string{
@@ -31,5 +36,14 @@ var data = [][]string{
 	{"NTPC", "NTPC", "2977281", "NSE", "5m"},
 	{"BHARAT PETROLEUM CORP  LT", "BPCL", "134657", "NSE", "5m"},
 	{"TATA STEEL", "TATASTEEL", "895745", "NSE", "5m"},
+	{"INDUSIND BANK", "INDUSINDBK", "1346049", "NSE", "5m"},
+	{"GAIL (INDIA)", "GAIL", "1207553", "NSE", "5m"},
+	{"STEEL AUTHORITY OF INDIA", "SAIL", "758529", "NSE", "5m"},
+	{"L&T FINANCE HOLDINGS", "L&TFH", "6386689", "NSE", "5m"},
+	{"HINDUSTAN PETROLEUM CORP", "HINDPETRO", "359937", "NSE", "5m"},
+	{"AUROBINDO PHARMA", "AUROPHARMA", "70401", "NSE", "5m"},
+	{"BANDHANBNK", "BANDHANBNK", "579329", "NSE", "5m"},
+	{"DIVI'S LABORATORIES", "DIVISLAB", "2865921", "NSE", "5m"},
+	{"BIOCON", "BIOCON", "2911489", "NSE", "5m"},
 	{"INTERGLOBE AVIATION", "INDIGO", "2865921", "NSE", "5m"},
 }

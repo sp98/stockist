@@ -41,10 +41,9 @@ func StartProcessing() {
 		return
 	}
 
-	SendAlerts("Testing")
 	// Connect to web socket to get tick data.
 	for _, subscription := range subscriptions {
-		time.Sleep(time.Second * 1)
+		time.Sleep(time.Second * 2)
 		go kite.StartTicker(subscription, accessToken)
 	}
 
