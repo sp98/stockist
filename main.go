@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/stockist1/pkg/instrument"
+	"github.com/stockist/pkg/instrument"
 )
 
 func main() {
@@ -12,6 +12,7 @@ func main() {
 	if !validateInstrument(inst) {
 		return
 	}
+
 	inst.StartProcessing()
 
 }

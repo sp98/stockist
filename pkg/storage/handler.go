@@ -24,7 +24,7 @@ var (
 )
 
 // CreateTickCQ creates a continuous query on Tick Measurement.
-func (db DB) CreateTickCQ(tradeInterval string, token string) error {
+func (db DB) CreateTickCQ(tradeInterval, token string) error {
 	cqMeasurement := fmt.Sprintf("%s_%s", db.Measurement, tradeInterval)
 	query := fmt.Sprintf(tickCQTime, cqMeasurement, db.Measurement, tradeInterval)
 	cquery := fmt.Sprintf(tickCQ, cqMeasurement, db.Name, query)
@@ -89,8 +89,6 @@ func (db DB) StoreTick(tickData *kiteticker.Tick) error {
 	fields := map[string]interface{}{
 		"LastPrice":         tick.LastPrice,
 		"AverageTradePrice": tick.AverageTradePrice,
-		"TotalBuyQuantity":  tick.TotalBuyQuantity,
-		"TotalSellQuantity": tick.TotalSellQuantity,
 	}
 	tags := map[string]string{
 		// "InstrumentToken": fmt.Sprint(tick.InstrumentToken),
@@ -157,7 +155,7 @@ func (db DB) GetMaxHigh() (float64, error) {
 	if len(response.Results) == 0 {
 		return 0, fmt.Errorf("Error finding max High from the aggregared query")
 	}
-	highestHigh := response.Results[0].Series[0].Values[1]
+	highestHigh := response.Results[0].Series[0].Values[0][1]
 	hightestHighf, _ := strconv.ParseFloat(fmt.Sprintf("%v", highestHigh), 64)
 	return hightestHighf, nil
 

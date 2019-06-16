@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/stockist1/pkg/storage"
+	"github.com/stockist/pkg/storage"
 	kiteconnect "github.com/zerodhatech/gokiteconnect"
 	kiteticker "github.com/zerodhatech/gokiteconnect/ticker"
 )
@@ -26,6 +26,9 @@ var (
 	//Subcriptions to the instruments token 112129
 	Subcriptions   = []uint32{}
 	marketOpenTime = "%s 9:00:00"
+	DBUrl          = "http://influxdb:8086"
+	//StockDB is the main database to hold ticks information
+	StockDB = "stockist"
 )
 
 // Triggered when any error is raised
@@ -53,14 +56,14 @@ func onConnect() {
 // Triggered when tick is recevived
 func onTick(tick kiteticker.Tick) {
 	//log.Println("Tick Received frome Kite API")
-	StoreTickInDB(&tick)
+	//StoreTickInDB(&tick)
 
 	//Run with dummy data when market is closed!
-	// for i := 0; i < 1000; i++ {
-	// 	time.Sleep(2 * time.Second)
-	// 	dticks := dummyTicks()
-	// 	StoreTickInDB(dticks)
-	// }
+	for i := 0; i < 1000; i++ {
+		time.Sleep(2 * time.Second)
+		dticks := dummyTicks()
+		StoreTickInDB(dticks)
+	}
 
 }
 
@@ -77,6 +80,13 @@ func onNoReconnect(attempt int) {
 // Triggered when order update is received
 func onOrderUpdate(order kiteconnect.Order) {
 	log.Printf("Order: %+v ", order)
+	if order.Status == "COMPLETE" && order.TransactionType == "BUY" && isInstrumentSubscribed(order.InstrumentToken) {
+		updateTradeInDB("BOUGHT", strconv.FormatUint(uint64(order.InstrumentToken), 10))
+	} else if order.Status == "COMPLETE" && order.TransactionType == "SELL" && isInstrumentSubscribed(order.InstrumentToken) {
+		updateTradeInDB("SOLD", strconv.FormatUint(uint64(order.InstrumentToken), 10))
+	} else if order.Status == "REJECTED" && isInstrumentSubscribed(order.InstrumentToken) {
+		log.Printf("Last Order Got Rejected")
+	}
 }
 
 //StartTicker starts the websocket to receive kite ticker data
@@ -102,9 +112,9 @@ func StartTicker(apiKey, accestoken string) {
 
 //StoreTickInDB stors the tick in influx db
 func StoreTickInDB(tick *kiteticker.Tick) {
-	// log.Printf("Tick received: %+v\n", tick)
-	// log.Println("---------------------------------")
-	db := storage.NewDB("http://localhost:8086", "stockist", "")
+	log.Printf("Tick received: %+v\n", tick)
+	log.Println("---------------------------------")
+	db := storage.NewDB(DBUrl, StockDB, "")
 	if isBeforeMarketOpen() {
 		db.Measurement = fmt.Sprintf("%s_%s_%s", "ticks", strconv.FormatUint(uint64(tick.InstrumentToken), 10), "5m")
 		log.Println("Storing Last Day's OHLC ")
@@ -132,21 +142,20 @@ func isBeforeMarketOpen() bool {
 
 }
 
-// func tickToMap(tick *kiteticker.Tick) map[string]interface{} {
-// 	var inInterface map[string]interface{}
-// 	inrec, _ := json.Marshal(tick)
-// 	json.Unmarshal(inrec, &inInterface)
-// 	return inInterface
-// }
+func updateTradeInDB(option, instToken string) {
+	db := storage.NewDB(DBUrl, StockDB, "trade")
+	db.InsertTrade(instToken, option)
 
-// func mapToTick(data map[string]interface{}) *kiteticker.Tick {
+}
 
-// 	var tick *kiteticker.Tick
-// 	err := ms.Decode(data, &tick)
-// 	if err != nil {
-// 		panic(err)
-// 	}
+func isInstrumentSubscribed(instToken uint32) bool {
+	for _, subscribedInst := range Subcriptions {
+		if instToken == subscribedInst {
+			//log.Println("Token Matched")
+			return true
+		}
 
-// 	return tick
-
-// }
+	}
+	//log.Println("Token didn't match!")
+	return false
+}

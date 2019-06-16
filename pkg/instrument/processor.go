@@ -5,13 +5,13 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/stockist1/pkg/kite"
-	"github.com/stockist1/pkg/storage"
+	"github.com/stockist/pkg/kite"
+	"github.com/stockist/pkg/storage"
 )
 
 var (
 	//DBUrl is the url to connect to the influx DB
-	DBUrl = "http://localhost:8086"
+	DBUrl = "http://influxdb:8086"
 	//StockDB is the main database to hold ticks information
 	StockDB       = "stockist"
 	tradeOpenTime = "%sT03:45:05Z"
@@ -21,11 +21,14 @@ func initDB(insturment Instrument) error {
 	//Create continuous queries
 	db := storage.NewDB(DBUrl, StockDB, "")
 	db.Measurement = fmt.Sprintf("%s_%s", "ticks", insturment.Token)
+	log.Printf("Here1")
 	err := db.CreateTickCQ(insturment.Interval, insturment.Token)
 	if err != nil {
 		log.Printf("Error creating CQ for the isntrument: +%v. Erro: %+v", insturment, err)
 		return err
 	}
+
+	log.Printf("Here2")
 
 	return nil
 }
@@ -38,10 +41,12 @@ func (instrument Instrument) StartProcessing() {
 	//Create Continous Queries
 	err := initDB(instrument)
 	if err != nil {
-		log.Printf("Instruement valiation failed with Error - %+v", err)
+		log.Printf("Error Initializing DB: %+v", err)
 		return
 	}
 	kite.Subcriptions = append(kite.Subcriptions, getUnit32(instrument.Token))
+
+	log.Println("Subscriptions - ", kite.Subcriptions)
 
 	// Create connection with Kite
 	cs := &CandleStick{

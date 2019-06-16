@@ -25,16 +25,15 @@ type Instrument struct {
 // New Instruement
 func New() *Instrument {
 	instrument := &Instrument{
-		Exchange:    os.Getenv("Exchange"),
-		Symbol:      os.Getenv("TradingSymbol"),
-		Name:        os.Getenv("InstrumentName"),
-		Token:       os.Getenv("InstrumentToken"),
-		Interval:    os.Getenv("TradeInterval"),
-		APIKey:      os.Getenv("APIKey"),
-		APISecret:   os.Getenv("APISecret"),
-		AccessToken: os.Getenv("AccessToken"),
+		Exchange:    os.Getenv("EXCHANGE"),
+		Symbol:      os.Getenv("TRADINGSYMBOL"),
+		Name:        os.Getenv("INSTRUMENTNAME"),
+		Token:       os.Getenv("INSTRUMENTTOKEN"),
+		Interval:    os.Getenv("TRADEINTERVAL"),
+		APIKey:      os.Getenv("APIKEY"),
+		APISecret:   os.Getenv("APISECRET"),
+		AccessToken: os.Getenv("ACCESSTOKEN"),
 	}
-
 	return instrument
 
 }

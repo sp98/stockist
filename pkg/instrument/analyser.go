@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/stockist1/pkg/storage"
+	"github.com/stockist/pkg/storage"
 )
 
 var (
-	marketCloseTime      = "%s 15:30:00"
+	marketCloseTime      = "%s 18:30:00"
 	marketActualOpenTime = "%s 09:13:00 MST"
 	tstringFormat        = "2006-01-02 15:04:05"
 	layOut               = "2006-01-02 15:04:05"
@@ -20,12 +20,12 @@ var (
 //CandleStick holds the currently trading order details
 type CandleStick struct {
 	Instrument    Instrument
-	Details       []CandleStickDetails
+	Details       []CandleStickList
 	PreviousTrade string
 }
 
-//CandleStickDetails is the aggregate of the trade
-type CandleStickDetails struct {
+//CandleStickList is the aggregate of the trade
+type CandleStickList struct {
 	AverageTradedPrice float64
 	Close              float64
 	High               float64
@@ -57,6 +57,7 @@ func (cs *CandleStick) startAnalysis() error {
 		time.Sleep(time.Second * time.Duration(wt))
 	}
 
+	//cs.Analyse()
 	t := time.NewTicker(time.Minute * time.Duration(interval))
 
 	log.Printf("Analysis Start Time: %+v ::: Analysis Stop Time: %+v", time.Now(), fmt.Sprintf(marketCloseTime, getDate()))
@@ -87,7 +88,7 @@ func (cs *CandleStick) Analyse() {
 	log.Printf("Aggregate results - %+v", csList)
 
 	if len(*csList) == 0 {
-		log.Println("Error: Trade details is empty!")
+		log.Println("Error: Candle Stick details are empty!")
 		return
 	}
 	cs.Details = *csList
@@ -98,14 +99,14 @@ func (cs *CandleStick) Analyse() {
 	}
 }
 
-func (cs *CandleStick) getTicks() *[]CandleStickDetails {
+func (cs *CandleStick) getTicks() *[]CandleStickList {
 	db := storage.NewDB(DBUrl, StockDB, "")
 	db.Measurement = fmt.Sprintf("%s_%s_%s", "ticks", cs.Instrument.Token, cs.Instrument.Interval)
 	orderRespsonse, _ := db.GetTicks()
-	var csDetailList []CandleStickDetails
+	var csDetailList []CandleStickList
 	for _, results := range orderRespsonse.Results {
 		for _, rows := range results.Series {
-			cs := &CandleStickDetails{}
+			cs := &CandleStickList{}
 			for _, row := range rows.Values {
 				cs.AverageTradedPrice, _ = strconv.ParseFloat(fmt.Sprintf("%v", row[1]), 64)
 				cs.Close, _ = strconv.ParseFloat(fmt.Sprintf("%v", row[2]), 64)
@@ -136,7 +137,7 @@ func (cs *CandleStick) getOverallTrend(currentHigh float64) string {
 }
 
 //Gives the trend before the current Candlestick pattern
-func getShortTermTrend(csDetails []CandleStickDetails) (string, int) {
+func getShortTermTrend(csDetails []CandleStickList) (string, int) {
 	trend := ""
 	trendCount := 0
 

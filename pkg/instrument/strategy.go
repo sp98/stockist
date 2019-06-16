@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/stockist1/pkg/storage"
+	"github.com/stockist/pkg/storage"
 )
 
 // BuyLow identifies the lowest price where to stock could be bought.
@@ -41,7 +41,7 @@ func (cs CandleStick) BuyLow() {
 				// Previous low should be the lowest so far. Lower than both today's low and previous day's low.
 				if cs.Details[1].Low <= cs.getLowestPrice() {
 					//Create some alert here
-					SendAlerts(fmt.Sprintf("BUY %s-%s", cs.Instrument.Token, cs.Instrument.Exchange))
+					SendAlerts(fmt.Sprintf("BUY %s-%s", cs.Instrument.Name, cs.Instrument.Exchange))
 				}
 			}
 
@@ -75,7 +75,7 @@ func (cs CandleStick) BuyLow() {
 			if (shortTrend == "rally" && trendCount >= 3) || (bullTrend && bullCounts >= 3) || hhePattern >= 5 {
 				//Good to SELL now with stop loss
 				// Previous low should be the lowest so far. Lower than both today's low and previous day's low.
-				if cs.Details[1].Low <= cs.getLowestPrice() {
+				if cs.Details[1].High > cs.getHighestPrice() {
 					//updateTradeInDB(trade.Order.InstrumentToken, "BUY")
 					//Create some alert here
 					SendAlerts(fmt.Sprintf("SELL  %s-%s", cs.Instrument.Token, cs.Instrument.Exchange))

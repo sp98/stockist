@@ -1,6 +1,6 @@
 package instrument
 
-func isBullish(csDetails []CandleStickDetails) (bool, int) {
+func isBullish(csDetails []CandleStickList) (bool, int) {
 
 	isBull := true
 	lastCandleStick := csDetails[0]
@@ -23,7 +23,7 @@ func isBullish(csDetails []CandleStickDetails) (bool, int) {
 
 }
 
-func isBearish(csDetails []CandleStickDetails) (bool, int) {
+func isBearish(csDetails []CandleStickList) (bool, int) {
 
 	isBear := true
 	lastCandleStick := csDetails[0]
@@ -43,7 +43,7 @@ func isBearish(csDetails []CandleStickDetails) (bool, int) {
 
 }
 
-func isBullishMarubuzo(csDetails CandleStickDetails) bool {
+func isBullishMarubuzo(csDetails CandleStickList) bool {
 	if csDetails.Open < csDetails.Close {
 		//println(((cs.Close - cs.Open) / (cs.High - cs.Low)))
 		if csDetails.Open == csDetails.Low && csDetails.Close == csDetails.High {
@@ -59,7 +59,7 @@ func isBullishMarubuzo(csDetails CandleStickDetails) bool {
 
 }
 
-func isBearishMarubuzo(cs CandleStickDetails) bool {
+func isBearishMarubuzo(cs CandleStickList) bool {
 
 	if cs.Open > cs.Close {
 		//println(((cs.Open - cs.Close) / (cs.High - cs.Low)))
@@ -76,7 +76,7 @@ func isBearishMarubuzo(cs CandleStickDetails) bool {
 
 }
 
-func isDozi(cs CandleStickDetails) bool {
+func isDozi(cs CandleStickList) bool {
 	if cs.Open == cs.Close && (cs.High != cs.Open || cs.Low != cs.Open) {
 		return true
 	}
@@ -89,7 +89,7 @@ func isDozi(cs CandleStickDetails) bool {
 
 }
 
-func isInvertedHammer(cs CandleStickDetails) bool {
+func isInvertedHammer(cs CandleStickList) bool {
 	if cs.Open < cs.Close {
 		if (2*(cs.Close-cs.Open) < (cs.High - cs.Close)) && ((cs.Open - cs.Low) < (cs.Close - cs.Open)) {
 			return true
@@ -103,7 +103,7 @@ func isInvertedHammer(cs CandleStickDetails) bool {
 	return false
 }
 
-func isBullishHammer(cs CandleStickDetails) bool {
+func isBullishHammer(cs CandleStickList) bool {
 	if cs.Open < cs.Close {
 		if ((cs.Open - cs.Low) >= 2*(cs.Close-cs.Open)) && ((cs.High - cs.Close) < (cs.Close - cs.Open)) {
 			return true
@@ -113,7 +113,7 @@ func isBullishHammer(cs CandleStickDetails) bool {
 	return false
 }
 
-func isBearishHammer(cs CandleStickDetails) bool {
+func isBearishHammer(cs CandleStickList) bool {
 	if cs.Open > cs.Close {
 		if ((cs.Close - cs.Low) >= 2*(cs.Open-cs.Close)) && ((cs.High - cs.Open) < (cs.Open - cs.Close)) {
 			return true
@@ -123,7 +123,7 @@ func isBearishHammer(cs CandleStickDetails) bool {
 }
 
 //isLowerHighsEngulfingPatter checks for patter where lower highs are made but lows may be lower or higher (making the previous pattern engulfuing the previous one)
-func lowerHighsEngulfingPatternCount(cs []CandleStickDetails) int {
+func lowerHighsEngulfingPatternCount(cs []CandleStickList) int {
 	count := 0
 	for i := 0; i < len(cs)-1; i++ {
 		if cs[i].High < cs[i+1].High && ((cs[i].Low < cs[i+1].Low) || (cs[i].Low > cs[i+1].Low)) {
@@ -135,7 +135,7 @@ func lowerHighsEngulfingPatternCount(cs []CandleStickDetails) int {
 	return count
 }
 
-func higherLowsEngulfingPatternCount(cs []CandleStickDetails) int {
+func higherLowsEngulfingPatternCount(cs []CandleStickList) int {
 	count := 0
 	for i := 0; i < len(cs)-1; i++ {
 		if cs[i].Low > cs[i+1].Low && ((cs[i].High > cs[i+1].High) || (cs[i].High <= cs[i+1].High)) {

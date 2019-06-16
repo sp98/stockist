@@ -25,7 +25,7 @@ func dummyTicks() *kiteticker.Tick {
 	}
 	ticks := &kiteticker.Tick{
 		Mode:               mode,
-		InstrumentToken:    112129,
+		InstrumentToken:    519937,
 		IsTradable:         true,
 		IsIndex:            true,
 		LastPrice:          getFloat64(20, 30),
