@@ -7,7 +7,7 @@ import (
 	"time"
 
 	client "github.com/influxdata/influxdb1-client/v2"
-	kiteticker "github.com/zerodhatech/gokiteconnect/ticker"
+	kiteticker "github.com/sp98/gokiteconnect/ticker"
 )
 
 var (

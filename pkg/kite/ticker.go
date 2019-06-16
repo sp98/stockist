@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"time"
 
+	kiteconnect "github.com/sp98/gokiteconnect"
+	kiteticker "github.com/sp98/gokiteconnect/ticker"
 	"github.com/stockist/pkg/storage"
-	kiteconnect "github.com/zerodhatech/gokiteconnect"
-	kiteticker "github.com/zerodhatech/gokiteconnect/ticker"
 )
 
 var (
@@ -34,6 +34,10 @@ var (
 	marketOpenTime = "%s 9:00:00"
 )
 
+//SubscriptionConfig stores subcription ID key value pair
+type SubscriptionConfig struct {
+}
+
 // Triggered when any error is raised
 func onError(err error) {
 	log.Println("Error in Kite Trade API: ", err)
@@ -45,10 +49,10 @@ func onClose(code int, reason string) {
 }
 
 // Triggered when connection is established and ready to send and accept data
-func onConnect() {
+func onConnect(t []uint32) {
 	log.Println("Connected with Kite Trading API")
-	log.Printf("Subcriptions - %+v\n", Subcriptions)
-	err := ticker.Subscribe(Subcriptions)
+	log.Printf("Subcriptions - %+v\n", t)
+	err := ticker.Subscribe(t)
 	if err != nil {
 		fmt.Println("err: ", err)
 	}
@@ -94,7 +98,7 @@ func onOrderUpdate(order kiteconnect.Order) {
 }
 
 //StartTicker starts the websocket to receive kite ticker data
-func StartTicker(accestoken string) {
+func StartTicker(tokens []uint32, accestoken string) {
 	// Create a new Kite connect instance
 
 	// Create new Kite ticker instance
@@ -110,7 +114,7 @@ func StartTicker(accestoken string) {
 	ticker.OnOrderUpdate(onOrderUpdate)
 
 	// Start the connection
-	ticker.Serve()
+	ticker.Serve(tokens)
 
 }
 
@@ -163,22 +167,3 @@ func isInstrumentSubscribed(instToken uint32) bool {
 	//log.Println("Token didn't match!")
 	return false
 }
-
-// func tickToMap(tick *kiteticker.Tick) map[string]interface{} {
-// 	var inInterface map[string]interface{}
-// 	inrec, _ := json.Marshal(tick)
-// 	json.Unmarshal(inrec, &inInterface)
-// 	return inInterface
-// }
-
-// func mapToTick(data map[string]interface{}) *kiteticker.Tick {
-
-// 	var tick *kiteticker.Tick
-// 	err := ms.Decode(data, &tick)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-// 	return tick
-
-// }

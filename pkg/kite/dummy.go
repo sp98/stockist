@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"time"
 
-	kiteconnect "github.com/zerodhatech/gokiteconnect"
-	kiteticker "github.com/zerodhatech/gokiteconnect/ticker"
+	kiteconnect "github.com/sp98/gokiteconnect"
+	kiteticker "github.com/sp98/gokiteconnect/ticker"
 )
 
 func dummyTicks() *kiteticker.Tick {

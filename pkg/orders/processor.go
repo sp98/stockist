@@ -48,6 +48,7 @@ func StartProcessing() {
 		kite.Subcriptions = append(kite.Subcriptions, getUnit32(order.InstrumentToken))
 	}
 
+	getSubs(kite.Subcriptions)
 	// Create connection with Kite
 	_, accessToken := kite.Connect()
 
@@ -60,7 +61,7 @@ func StartProcessing() {
 	}
 
 	//Start Kite Ticker
-	kite.StartTicker(accessToken)
+	kite.StartTicker(kite.Subcriptions, accessToken)
 
 }
 
@@ -120,4 +121,23 @@ func getUnit32(str string) uint32 {
 	// var a uint32
 	u, _ := strconv.ParseUint(str, 10, 32)
 	return uint32(u)
+}
+
+func getSubs(subs []uint32) {
+	connections := 3
+	var divided [][]uint32
+
+	chunkSize := (len(subs) + connections - 1) / connections
+
+	for i := 0; i < len(subs); i += chunkSize {
+		end := i + chunkSize
+
+		if end > len(subs) {
+			end = len(subs)
+		}
+
+		divided = append(divided, subs[i:end])
+	}
+
+	fmt.Printf("Subscriptions %v\n", divided)
 }
