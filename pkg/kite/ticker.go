@@ -114,8 +114,8 @@ func StartTicker(tokens []uint32, accestoken string) {
 
 //StoreTickInDB stors the tick in influx db
 func StoreTickInDB(tick *kiteticker.Tick) {
-	log.Printf("Tick received: %+v\n", tick)
-	log.Println("---------------------------------")
+	// log.Printf("Tick received: %+v\n", tick)
+	// log.Println("---------------------------------")
 	db := storage.NewDB(DBUrl, StockDB, "")
 	if isBeforeMarketOpen() {
 		db.Measurement = fmt.Sprintf("%s_%s_%s", "ticks", strconv.FormatUint(uint64(tick.InstrumentToken), 10), "5m")
