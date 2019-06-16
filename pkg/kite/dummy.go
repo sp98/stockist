@@ -9,6 +9,10 @@ import (
 	kiteticker "github.com/sp98/gokiteconnect/ticker"
 )
 
+var testTokens = []uint32{
+	3050241, 7712001, 975873, 1195009,
+	1102337, 1076225, 2029825, 4774913, 5573121}
+
 func dummyTicks() *kiteticker.Tick {
 
 	var mode kiteticker.Mode
@@ -25,7 +29,7 @@ func dummyTicks() *kiteticker.Tick {
 	}
 	ticks := &kiteticker.Tick{
 		Mode:               mode,
-		InstrumentToken:    519937,
+		InstrumentToken:    testTokens[rand.Intn(len(testTokens))],
 		IsTradable:         true,
 		IsIndex:            true,
 		LastPrice:          getFloat64(20, 30),
