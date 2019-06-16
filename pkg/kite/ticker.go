@@ -57,7 +57,7 @@ func onConnect(tokens []uint32) {
 
 // Triggered when tick is recevived
 func onTick(tick kiteticker.Tick) {
-	log.Println("Tick Received frome Kite API")
+	//log.Println("Tick Received frome Kite API")
 	StoreTickInDB(&tick)
 
 	// //Run with dummy data when market is closed!
