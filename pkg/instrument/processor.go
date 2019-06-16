@@ -3,7 +3,7 @@ package instrument
 import (
 	"fmt"
 	"log"
-	"strconv"
+	"time"
 
 	"github.com/stockist/pkg/kite"
 	"github.com/stockist/pkg/storage"
@@ -11,78 +11,93 @@ import (
 
 var (
 	//DBUrl is the url to connect to the influx DB
-	DBUrl = "http://influxdb:8086"
+	DBUrl = "http://localhost:8086"
 	//StockDB is the main database to hold ticks information
 	StockDB       = "stockist"
 	tradeOpenTime = "%sT03:45:05Z"
 )
 
-func initDB(insturment Instrument) error {
-	//Create continuous queries
-	db := storage.NewDB(DBUrl, StockDB, "")
-	db.Measurement = fmt.Sprintf("%s_%s", "ticks", insturment.Token)
-	log.Printf("Here1")
-	err := db.CreateTickCQ(insturment.Interval, insturment.Token)
-	if err != nil {
-		log.Printf("Error creating CQ for the isntrument: +%v. Erro: %+v", insturment, err)
-		return err
-	}
-
-	log.Printf("Here2")
-
-	return nil
-}
-
 //StartProcessing starts the order processing for the day!
-func (instrument Instrument) StartProcessing() {
-	log.Println("Start Validating Instrument")
-	log.Printf("Instrument - %+v\n", instrument)
+func StartProcessing() {
+	log.Printf("--- START ---")
+	instruments := GetInstrumentList()
+	if len(*instruments) == 0 {
+		log.Println("Error: No instruments to analyse")
+		return
+	}
+	log.Printf("Instruments - %+v\n", instruments)
 
-	//Create Continous Queries
-	err := initDB(instrument)
+	subscriptions := GetSubscriptions()
+	if len(subscriptions) == 0 {
+		log.Println("Error: No Subscriptions data found")
+		return
+	}
+	log.Printf("Subscriptions - %+v\n", subscriptions)
+
+	//Create Database table and Continous Queries
+	err := initDB(*instruments)
 	if err != nil {
 		log.Printf("Error Initializing DB: %+v", err)
 		return
 	}
-	kite.Subcriptions = append(kite.Subcriptions, getUnit32(instrument.Token))
 
-	log.Println("Subscriptions - ", kite.Subcriptions)
-
-	// Create connection with Kite
-	cs := &CandleStick{
-		Instrument: instrument,
+	// Connect to web socket to get tick data.
+	for _, subscription := range subscriptions {
+		time.Sleep(time.Second * 1)
+		go kite.StartTicker(subscription, accessToken)
 	}
 
-	go cs.startAnalysis()
+	// Analyse the aggregated tick results
+	for _, instrument := range *instruments {
+		cs := &CandleStick{
+			Instrument: instrument,
+		}
+		go cs.startAnalysis()
 
-	//Start Kite Ticker
-	kite.StartTicker(instrument.APIKey, instrument.AccessToken)
+	}
 
+	//Wait until some time.
+	duration, err := closeTrade()
+	if err != nil {
+		log.Println("Error Parsing Trade Close time")
+	}
+	log.Printf("Closing trade in - %v", duration)
+	time.Sleep(duration)
+
+	log.Printf("--- END ---")
 }
 
-func (cs CandleStick) getLowestPrice() float64 {
+func initDB(insturments []Instrument) error {
+
+	//Create DB
 	db := storage.NewDB(DBUrl, StockDB, "")
-	db.Measurement = fmt.Sprintf("%s_%s_%s", "ticks", cs.Instrument.Token, cs.Instrument.Interval)
-	lowest, _ := db.GetLowestLow()
-	return lowest
+	err := db.CreateDB()
+	if err != nil {
+		return err
+	}
+
+	//Create continuous queries
+	for _, instrument := range insturments {
+		db := storage.NewDB(DBUrl, StockDB, "")
+		db.Measurement = fmt.Sprintf("%s_%s", "ticks", instrument.Token)
+		err := db.CreateTickCQ(instrument.Interval, instrument.Token)
+		if err != nil {
+			log.Printf("Error creating CQ for the isntrument: +%v. Erro: %+v", instrument, err)
+			return err
+		}
+	}
+	return nil
 }
 
-func (cs CandleStick) getHighestPrice() float64 {
-	db := storage.NewDB(DBUrl, StockDB, "")
-	db.Measurement = fmt.Sprintf("%s_%s_%s", "ticks", cs.Instrument.Token, cs.Instrument.Interval)
-	hightest, _ := db.GetMaxHigh()
-	return hightest
-}
-
-func (cs CandleStick) getOpenPrice() float64 {
-	db := storage.NewDB(DBUrl, StockDB, "")
-	db.Measurement = fmt.Sprintf("%s_%s_%s", "ticks", cs.Instrument.Token, cs.Instrument.Interval)
-	hightest, _ := db.GetMarketOpenPrice()
-	return hightest
-}
-
-func getUnit32(str string) uint32 {
-	// var a uint32
-	u, _ := strconv.ParseUint(str, 10, 32)
-	return uint32(u)
+func closeTrade() (time.Duration, error) {
+	closeTime, err := parseTime(layOut, fmt.Sprintf(marketCloseTime, getDate()))
+	if err != nil {
+		return 0, err
+	}
+	currentTime := time.Now().Format(tstringFormat)
+	parsedCurrentTime, err := parseTime(layOut, currentTime)
+	if err != nil {
+		return 0, err
+	}
+	return closeTime.Sub(parsedCurrentTime), nil
 }

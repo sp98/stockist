@@ -18,6 +18,8 @@ github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
+github.com/sp98/gokiteconnect v0.0.0-20190616040757-dff6c8cb6348 h1:oU3IXI1hOxbh0uhT3FInWukRjSyAYETxeQwHfUkOjbw=
+github.com/sp98/gokiteconnect v0.0.0-20190616040757-dff6c8cb6348/go.mod h1:KZemz3f8n8AcqIA42/wVKth+iQWpeRA99/D9a0jThPU=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.3.0 h1:TivCn/peBQ7UY8ooIcPgZFpTNSz0Q2U6UrFlUfqbe0Q=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
@@ -28,4 +30,5 @@ golang.org/x/net v0.0.0-20190613194153-d28f0bde5980 h1:dfGZHvZk057jK2MCeWus/TowK
 golang.org/x/net v0.0.0-20190613194153-d28f0bde5980/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
 golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
+gopkg.in/jarcoal/httpmock.v1 v1.0.0-20180719183105-8007e27cdb32 h1:30DLrQoRqdUHslVMzxuKUnY4GKJGk1/FJtKy3yx4TKE=
 gopkg.in/jarcoal/httpmock.v1 v1.0.0-20180719183105-8007e27cdb32/go.mod h1:d3R+NllX3X5e0zlG1Rful3uLvsGC/Q3OHut5464DEQw=

@@ -9,14 +9,6 @@ import (
 	"github.com/stockist/pkg/storage"
 )
 
-var (
-	marketCloseTime      = "%s 18:30:00"
-	marketActualOpenTime = "%s 09:13:00 MST"
-	tstringFormat        = "2006-01-02 15:04:05"
-	layOut               = "2006-01-02 15:04:05"
-	influxLayout         = "2006-01-02T15:04:05Z"
-)
-
 //CandleStick holds the currently trading order details
 type CandleStick struct {
 	Instrument    Instrument
@@ -34,22 +26,22 @@ type CandleStickList struct {
 }
 
 func (cs *CandleStick) startAnalysis() error {
-	log.Printf("--- Begin Analysis for %s ----", cs.Instrument.Name)
+	log.Printf("---ANALYSE - %s ----", cs.Instrument.Name)
 	interval := getInterval(cs.Instrument.Interval)
 	if interval == 0 {
 		log.Fatal("invalid order interval ")
 		//return error here
 	}
 
-	mct, err := parseTime(layOut, fmt.Sprintf(marketCloseTime, getDate()))
-	if err != nil {
-		return err
-	}
+	// mct, err := parseTime(layOut, fmt.Sprintf(marketCloseTime, getDate()))
+	// if err != nil {
+	// 	return err
+	// }
 
-	if stop, _ := cs.stopAnalysis(mct, false); stop {
-		log.Printf("Can't start analysis. Already past market closing time %+v", mct)
-		return nil
-	}
+	// if stop, _ := cs.stopAnalysis(mct, false); stop {
+	// 	log.Printf("Can't start analysis. Already past market closing time %+v", mct)
+	// 	return nil
+	// }
 
 	wt := waitBeforeAnalysis(interval)
 	if wt > 0 {
@@ -63,15 +55,15 @@ func (cs *CandleStick) startAnalysis() error {
 	log.Printf("Analysis Start Time: %+v ::: Analysis Stop Time: %+v", time.Now(), fmt.Sprintf(marketCloseTime, getDate()))
 
 	for alive := true; alive; {
-		res, _ := cs.stopAnalysis(mct, true)
-		if res {
-			cT, _ := parseTime(layOut, time.Now().Format(tstringFormat))
-			log.Printf("Stopping Analysis for Today at %+v", cT)
+		// res, _ := cs.stopAnalysis(mct, true)
+		// if res {
+		// 	cT, _ := parseTime(layOut, time.Now().Format(tstringFormat))
+		// 	log.Printf("Stopping Analysis for Today at %+v", cT)
 
-			alive = false
-			t.Stop()
-			break
-		}
+		// 	alive = false
+		// 	t.Stop()
+		// 	break
+		// }
 		stamp := <-t.C
 		log.Printf("Starting Analysis at %+v", stamp.Format(tstringFormat))
 		// do actual analysis here
@@ -93,9 +85,8 @@ func (cs *CandleStick) Analyse() {
 	}
 	cs.Details = *csList
 
-	//trade.StrategyOne()
 	if len(cs.Details) > 3 {
-		cs.BuyLow()
+		cs.BuyLowSellHigh()
 	}
 }
 
@@ -115,7 +106,6 @@ func (cs *CandleStick) getTicks() *[]CandleStickList {
 				cs.Open, _ = strconv.ParseFloat(fmt.Sprintf("%v", row[5]), 64)
 				csDetailList = append(csDetailList, *cs)
 			}
-
 		}
 
 	}
@@ -244,6 +234,33 @@ func getActualMarketOpenTime(date string) (string, error) {
 	}
 	return t.UTC().Format("2006-01-02T15:04:05Z"), nil
 
+}
+
+func (cs CandleStick) getLowestPrice() float64 {
+	db := storage.NewDB(DBUrl, StockDB, "")
+	db.Measurement = fmt.Sprintf("%s_%s_%s", "ticks", cs.Instrument.Token, cs.Instrument.Interval)
+	lowest, _ := db.GetLowestLow()
+	return lowest
+}
+
+func (cs CandleStick) getHighestPrice() float64 {
+	db := storage.NewDB(DBUrl, StockDB, "")
+	db.Measurement = fmt.Sprintf("%s_%s_%s", "ticks", cs.Instrument.Token, cs.Instrument.Interval)
+	hightest, _ := db.GetMaxHigh()
+	return hightest
+}
+
+func (cs CandleStick) getOpenPrice() float64 {
+	db := storage.NewDB(DBUrl, StockDB, "")
+	db.Measurement = fmt.Sprintf("%s_%s_%s", "ticks", cs.Instrument.Token, cs.Instrument.Interval)
+	hightest, _ := db.GetMarketOpenPrice()
+	return hightest
+}
+
+func getUnit32(str string) uint32 {
+	// var a uint32
+	u, _ := strconv.ParseUint(str, 10, 32)
+	return uint32(u)
 }
 
 func getDate() string {

@@ -51,7 +51,6 @@ func (db DB) CreateDB() error {
 	query := client.Query{
 		Command: fmt.Sprintf(createDB, db.Name),
 	}
-
 	_, err := db.executeQuery(query)
 	if err != nil {
 		//TODO: Handle dabase already exists error.

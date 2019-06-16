@@ -11,24 +11,25 @@ import (
 	"strconv"
 	"time"
 
+	kiteconnect "github.com/sp98/gokiteconnect"
+	kiteticker "github.com/sp98/gokiteconnect/ticker"
 	"github.com/stockist/pkg/storage"
-	kiteconnect "github.com/zerodhatech/gokiteconnect"
-	kiteticker "github.com/zerodhatech/gokiteconnect/ticker"
 )
-
-//TDepth is the depth of the ticker.
-type TDepth kiteticker.Depth
 
 //Order details
 
-var (
-	ticker *kiteticker.Ticker
-	//Subcriptions to the instruments token 112129
-	Subcriptions   = []uint32{}
-	marketOpenTime = "%s 9:00:00"
-	DBUrl          = "http://influxdb:8086"
+const (
+	//DBUrl is host name for influx db
+	DBUrl = "http://localhost:8086"
 	//StockDB is the main database to hold ticks information
-	StockDB = "stockist"
+	StockDB          = "stockist"
+	apiKey    string = "c7b8qdb6dcwc9obc"
+	apiSecret string = "ldxrh0w77x88zyhyuivbbr2svm2kml17"
+)
+
+var (
+	ticker         *kiteticker.Ticker
+	marketOpenTime = "%s 9:00:00"
 )
 
 // Triggered when any error is raised
@@ -42,28 +43,28 @@ func onClose(code int, reason string) {
 }
 
 // Triggered when connection is established and ready to send and accept data
-func onConnect() {
+func onConnect(tokens []uint32) {
 	log.Println("Connected with Kite Trading API")
-	log.Printf("Subcriptions - %+v\n", Subcriptions)
-	err := ticker.Subscribe(Subcriptions)
+	log.Printf("Tokens - %+v\n", tokens)
+	err := ticker.Subscribe(tokens)
 	if err != nil {
 		fmt.Println("err: ", err)
 	}
 
-	ticker.SetMode(kiteticker.ModeFull, Subcriptions)
+	ticker.SetMode(kiteticker.ModeFull, tokens)
 }
 
 // Triggered when tick is recevived
 func onTick(tick kiteticker.Tick) {
-	//log.Println("Tick Received frome Kite API")
-	//StoreTickInDB(&tick)
+	log.Println("Tick Received frome Kite API")
+	StoreTickInDB(&tick)
 
-	//Run with dummy data when market is closed!
-	for i := 0; i < 1000; i++ {
-		time.Sleep(2 * time.Second)
-		dticks := dummyTicks()
-		StoreTickInDB(dticks)
-	}
+	// //Run with dummy data when market is closed!
+	// for i := 0; i < 1000; i++ {
+	// 	time.Sleep(2 * time.Second)
+	// 	dticks := dummyTicks()
+	// 	StoreTickInDB(dticks)
+	// }
 
 }
 
@@ -80,17 +81,17 @@ func onNoReconnect(attempt int) {
 // Triggered when order update is received
 func onOrderUpdate(order kiteconnect.Order) {
 	log.Printf("Order: %+v ", order)
-	if order.Status == "COMPLETE" && order.TransactionType == "BUY" && isInstrumentSubscribed(order.InstrumentToken) {
+	if order.Status == "COMPLETE" && order.TransactionType == "BUY" {
 		updateTradeInDB("BOUGHT", strconv.FormatUint(uint64(order.InstrumentToken), 10))
-	} else if order.Status == "COMPLETE" && order.TransactionType == "SELL" && isInstrumentSubscribed(order.InstrumentToken) {
+	} else if order.Status == "COMPLETE" && order.TransactionType == "SELL" {
 		updateTradeInDB("SOLD", strconv.FormatUint(uint64(order.InstrumentToken), 10))
-	} else if order.Status == "REJECTED" && isInstrumentSubscribed(order.InstrumentToken) {
+	} else if order.Status == "REJECTED" {
 		log.Printf("Last Order Got Rejected")
 	}
 }
 
 //StartTicker starts the websocket to receive kite ticker data
-func StartTicker(apiKey, accestoken string) {
+func StartTicker(tokens []uint32, accestoken string) {
 	// Create a new Kite connect instance
 
 	// Create new Kite ticker instance
@@ -106,7 +107,7 @@ func StartTicker(apiKey, accestoken string) {
 	ticker.OnOrderUpdate(onOrderUpdate)
 
 	// Start the connection
-	ticker.Serve()
+	ticker.Serve(tokens)
 
 }
 
@@ -146,16 +147,4 @@ func updateTradeInDB(option, instToken string) {
 	db := storage.NewDB(DBUrl, StockDB, "trade")
 	db.InsertTrade(instToken, option)
 
-}
-
-func isInstrumentSubscribed(instToken uint32) bool {
-	for _, subscribedInst := range Subcriptions {
-		if instToken == subscribedInst {
-			//log.Println("Token Matched")
-			return true
-		}
-
-	}
-	//log.Println("Token didn't match!")
-	return false
 }
