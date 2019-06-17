@@ -11,6 +11,7 @@ import (
 func (cs CandleStick) BuyLowSellHigh() {
 
 	lastTrade := getLastTrade(cs.Instrument.Token)
+	log.Printf("---Total Points --- %v", cs.getTotalPoints())
 	log.Printf("Last Trade : %v", lastTrade)
 	if lastTrade == "SOLD" || len(lastTrade) == 0 {
 		isBull, bullTrend := isBullish(cs.Details)
@@ -36,13 +37,18 @@ func (cs CandleStick) BuyLowSellHigh() {
 		log.Printf("lhePattern - %v", lhePattern)
 
 		if isBull || bullishMaru || bullishHammer || dozi {
+			//Previous Trend was decline or consecutive bear trends or lower high Patterns
 			if (shortTrend == "decline" && trendCount >= 3) || (bearTrend && bearCounts >= 3) || lhePattern >= 5 {
-				//Good to buy now with stop loss
-				// Previous low should be the lowest so far. Lower than both today's low and previous day's low.
-				if cs.Details[1].Low <= cs.getLowestPrice() {
-					//Create some alert here
+				totalPoints := cs.getTotalPoints()
+				//Lowest Lows have been broken by last two CS
+				if cs.Details[1].Low < cs.getLowestPrice(totalPoints-1) {
 					SendAlerts(fmt.Sprintf("BUY %s-%s", cs.Instrument.Name, cs.Instrument.Exchange))
 				}
+				if cs.Details[1].Low <= cs.getLowestPrice(0) {
+					//Create some alert here
+					SendAlerts(fmt.Sprintf("BUY %s-%s --> %s", cs.Instrument.Name, cs.Instrument.Exchange, "Previous day's low is broken"))
+				}
+
 			}
 
 		}
@@ -73,6 +79,7 @@ func (cs CandleStick) BuyLowSellHigh() {
 
 		if isBear || bearishMaru || dozi {
 			if (shortTrend == "rally" && trendCount >= 3) || (bullTrend && bullCounts >= 3) || hhePattern >= 5 {
+
 				//Good to SELL now with stop loss
 				// Previous low should be the lowest so far. Lower than both today's low and previous day's low.
 				if cs.Details[1].High > cs.getHighestPrice() {
@@ -80,6 +87,7 @@ func (cs CandleStick) BuyLowSellHigh() {
 					//Create some alert here
 					SendAlerts(fmt.Sprintf("SELL  %s-%s", cs.Instrument.Token, cs.Instrument.Exchange))
 				}
+
 			}
 
 		}

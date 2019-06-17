@@ -236,10 +236,17 @@ func getActualMarketOpenTime(date string) (string, error) {
 
 }
 
-func (cs CandleStick) getLowestPrice() float64 {
+func (cs CandleStick) getTotalPoints() int64 {
 	db := storage.NewDB(DBUrl, StockDB, "")
 	db.Measurement = fmt.Sprintf("%s_%s_%s", "ticks", cs.Instrument.Token, cs.Instrument.Interval)
-	lowest, _ := db.GetLowestLow()
+	count, _ := db.GetPointsCount()
+	return count
+}
+
+func (cs CandleStick) getLowestPrice(limit int64) float64 {
+	db := storage.NewDB(DBUrl, StockDB, "")
+	db.Measurement = fmt.Sprintf("%s_%s_%s", "ticks", cs.Instrument.Token, cs.Instrument.Interval)
+	lowest, _ := db.GetLowestLow(limit)
 	return lowest
 }
 

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"strconv"
@@ -14,10 +15,12 @@ var (
 	createDB   = "CREATE DATABASE %s"
 	orderQuery = "SELECT * FROM Orders WHERE TradeDate=~/%s/"
 	tradeQuery = `select * from trade where InstrumentToken='%s' ORDER BY time DESC limit 1`
+	countQuery = `select count(*) from %s`
 
 	firstCandleStickQuery = `select * from %s limit 1`
 	maxHighQuery          = "SELECT max(High) as Highest from %s"
 	minLowQuery           = "SELECT min(Low) as Lowest from %s"
+	minLowQuerylimit      = "SELECT min(Low) as Lowest from %s limit %d"
 	ticksQuery            = "SELECT * FROM %s ORDER BY time DESC"
 	tickCQ                = "CREATE CONTINUOUS QUERY %s ON %s BEGIN %s END"
 	tickCQTime            = "SELECT FIRST(LastPrice) as Open, MAX(LastPrice) as High, MIN(LastPrice) as Low, LAST(LastPrice) as Close, last(AverageTradePrice) as AverageTradePrice INTO %s FROM %s GROUP BY time(%s)"
@@ -123,8 +126,6 @@ func (db DB) StorePreviousDayOHLC(tickData *kiteticker.Tick) error {
 		"Low":               tick.OHLC.Low,
 		"Close":             tick.OHLC.Close,
 		"AverageTradePrice": tick.AverageTradePrice,
-		"TotalBuyQuantity":  tick.TotalBuyQuantity,
-		"TotalSellQuantity": tick.TotalSellQuantity,
 	}
 	tags := map[string]string{}
 
@@ -162,15 +163,22 @@ func (db DB) GetMaxHigh() (float64, error) {
 }
 
 //GetLowestLow fetches the lowest value after 9:15 am
-func (db DB) GetLowestLow() (float64, error) {
+func (db DB) GetLowestLow(limit int64) (float64, error) {
 	dbClient, _ := db.GetClient()
 	defer dbClient.Close()
+
+	var cmd string
+	if limit == 0 {
+		cmd = fmt.Sprintf(minLowQuery, db.Measurement)
+	} else {
+		cmd = fmt.Sprintf(minLowQuerylimit, db.Measurement, limit)
+	}
 	query := client.Query{
 		//Command:  fmt.Sprintf(lowestLowQuery, "ticks_3699201_1m"),
-		Command:  fmt.Sprintf(minLowQuery, db.Measurement),
+		Command:  cmd,
 		Database: db.Name,
 	}
-	//log.Println("Query - ", query.Command)
+	log.Println("Query - ", query.Command)
 	response, err := db.executeQuery(query)
 	if err != nil {
 		log.Fatalln("Error getting orders - ", err)
@@ -269,7 +277,33 @@ func (db DB) GetLastTrade(tokenID string) (string, error) {
 	log.Printf("Response - %+v", response.Results)
 	lastTrade := response.Results[0].Series[0].Values[0][2]
 	slastTrade := fmt.Sprintf("%v", lastTrade)
-	fmt.Println(slastTrade)
 	return slastTrade, nil
+
+}
+
+//GetPointsCount gives the Total Count of points in the meausrement
+func (db DB) GetPointsCount() (int64, error) {
+	dbClient, _ := db.GetClient()
+	defer dbClient.Close()
+	query := client.Query{
+		//Command:  fmt.Sprintf(lowestLowQuery, "ticks_3699201_1m"),
+		Command:  fmt.Sprintf(countQuery, db.Measurement),
+		Database: db.Name,
+	}
+	//log.Println("Query - ", query.Command)
+	response, err := db.executeQuery(query)
+	if err != nil {
+		log.Fatalln("Error getting orders - ", err)
+		// return nil, err
+	}
+	// return response, nil
+	if len(response.Results[0].Series) == 0 {
+		return 0, fmt.Errorf("No data found")
+	}
+
+	log.Printf("Response - %+v", response.Results)
+	count := response.Results[0].Series[0].Values[0][2]
+	scount, _ := count.(json.Number).Int64()
+	return scount, nil
 
 }

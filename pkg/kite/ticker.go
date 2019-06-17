@@ -28,7 +28,7 @@ const (
 
 var (
 	ticker         *kiteticker.Ticker
-	marketOpenTime = "%s 9:00:00"
+	marketOpenTime = "%s 00:20:00"
 	apiKey         = os.Getenv("APIKEY")
 	apiSecret      = os.Getenv("APISECRET")
 )
@@ -58,14 +58,14 @@ func onConnect(tokens []uint32) {
 // Triggered when tick is recevived
 func onTick(tick kiteticker.Tick) {
 	//log.Println("Tick Received frome Kite API")
-	StoreTickInDB(&tick)
+	// StoreTickInDB(&tick)
 
-	// //Run with dummy data when market is closed!
-	// for i := 0; i < 1000; i++ {
-	// 	time.Sleep(2 * time.Second)
-	// 	dticks := dummyTicks()
-	// 	StoreTickInDB(dticks)
-	// }
+	//Run with dummy data when market is closed!
+	for i := 0; i < 1000; i++ {
+		time.Sleep(2 * time.Second)
+		dticks := dummyTicks()
+		StoreTickInDB(dticks)
+	}
 
 }
 
