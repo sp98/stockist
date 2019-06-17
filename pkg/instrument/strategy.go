@@ -41,7 +41,7 @@ func (cs CandleStick) BuyLowSellHigh() {
 				// Previous low should be the lowest so far. Lower than both today's low and previous day's low.
 				if cs.Details[1].Low <= cs.getLowestPrice() {
 					//Create some alert here
-					SendAlerts(fmt.Sprintf("BUY %s-%s", cs.Instrument.Name, cs.Instrument.Exchange))
+					SendAlerts(fmt.Sprintf("BUY %s-%s-%s", cs.Instrument.Name, cs.Instrument.Token, cs.Instrument.Exchange))
 				}
 			}
 
@@ -73,12 +73,8 @@ func (cs CandleStick) BuyLowSellHigh() {
 
 		if isBear || bearishMaru || dozi {
 			if (shortTrend == "rally" && trendCount >= 3) || (bullTrend && bullCounts >= 3) || hhePattern >= 5 {
-				//Good to SELL now with stop loss
-				// Previous low should be the lowest so far. Lower than both today's low and previous day's low.
 				if cs.Details[1].High > cs.getHighestPrice() {
-					//updateTradeInDB(trade.Order.InstrumentToken, "BUY")
-					//Create some alert here
-					SendAlerts(fmt.Sprintf("SELL  %s-%s", cs.Instrument.Token, cs.Instrument.Exchange))
+					SendAlerts(fmt.Sprintf("SELL  %s-%s-%s", cs.Instrument.Name, cs.Instrument.Token, cs.Instrument.Exchange))
 				}
 			}
 
