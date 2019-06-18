@@ -38,7 +38,7 @@ func (cs CandleStick) BuyLowSellHigh() {
 		if isBull || bullishMaru || bullishHammer || dozi {
 			if (shortTrend == "decline" && trendCount >= 3) || (bearTrend && bearCounts >= 3) || lhePattern >= 5 {
 				if cs.Details[1].Low <= cs.getLowestPrice() { //TODO: Use CS data to get lowes price rather than querying DB
-					SendAlerts(fmt.Sprintf("BUY %s - %s - %s", cs.Instrument.Name, cs.Instrument.Token, cs.Instrument.Exchange))
+					SendAlerts(fmt.Sprintf("BUY %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange))
 				}
 			}
 
@@ -71,9 +71,9 @@ func (cs CandleStick) BuyLowSellHigh() {
 		if isBear || bearishMaru || dozi {
 			if (shortTrend == "rally" && trendCount >= 3) || (bullTrend && bullCounts >= 3) || hhePattern >= 5 {
 				if cs.Details[1].High > cs.getHighestPrice() { //TODO: Use CS data to get Hishest price rather than querying DB
-					SendAlerts(fmt.Sprintf("DEFINITE SELL  %s - %s - %s. %s", cs.Instrument.Name, cs.Instrument.Token, cs.Instrument.Exchange, "Last day's High Broken!"))
+					SendAlerts(fmt.Sprintf("DEFINITE SELL  %s - %s - %s. %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, "Last day's High Broken!"))
 				}
-				SendAlerts(fmt.Sprintf("SELL  %s - %s - %s", cs.Instrument.Name, cs.Instrument.Token, cs.Instrument.Exchange))
+				SendAlerts(fmt.Sprintf("SELL  %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange))
 			}
 
 		}
