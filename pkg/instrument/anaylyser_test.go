@@ -16,6 +16,7 @@ var uptrendData1 = [][]float64{
 }
 
 var uptrendData2 = [][]float64{
+	//open, high, close, low
 	{50, 60, 45, 40},
 	{45, 55, 40, 35},
 	{40, 50, 35, 30},
@@ -26,6 +27,7 @@ var uptrendData2 = [][]float64{
 }
 
 var downtrendData1 = [][]float64{
+	//open, high, close, low
 	{25, 35, 20, 15},
 	{30, 40, 25, 20},
 	{35, 45, 30, 25},
@@ -35,6 +37,7 @@ var downtrendData1 = [][]float64{
 }
 
 var downTrendData2 = [][]float64{
+	//open, high, close, low
 	{25, 35, 20, 15},
 	{30, 40, 25, 20},
 	{35, 45, 30, 25},
@@ -45,10 +48,10 @@ var downTrendData2 = [][]float64{
 }
 var downtrendData = [][]float64{}
 
-func getTrendList(data [][]float64) []TradeDetails {
-	var tdList []TradeDetails
+func getTrendList(data [][]float64) []CandleStickList {
+	var tdList []CandleStickList
 	for _, d := range data {
-		td := &TradeDetails{
+		td := &CandleStickList{
 			Open:  d[0],
 			High:  d[1],
 			Close: d[2],
@@ -59,8 +62,8 @@ func getTrendList(data [][]float64) []TradeDetails {
 	return tdList
 
 }
-func getTestData(open, high, close, low float64) *TradeDetails {
-	td := &TradeDetails{
+func getTestData(open, high, close, low float64) *CandleStickList {
+	td := &CandleStickList{
 		Open:  open,
 		High:  high,
 		Close: close,
@@ -70,8 +73,13 @@ func getTestData(open, high, close, low float64) *TradeDetails {
 	return td
 
 }
+
+func getCandleStick() {
+
+}
+
 func TestIsBullish(t *testing.T) {
-	var tdList []TradeDetails
+	var tdList []CandleStickList
 	td := getTestData(10, 20, 15, 5)
 	tdList = append(tdList, *td)
 	res, count := isBullish(tdList)
@@ -85,7 +93,7 @@ func TestIsBullish(t *testing.T) {
 }
 
 func TestBullishCount(t *testing.T) {
-	var tdList []TradeDetails
+	var tdList []CandleStickList
 	td1 := getTestData(10, 20, 15, 5)
 	tdList = append(tdList, *td1)
 	td2 := getTestData(12, 22, 17, 7)
@@ -104,7 +112,7 @@ func TestBullishCount(t *testing.T) {
 }
 
 func TestIsBearish(t *testing.T) {
-	var tdList []TradeDetails
+	var tdList []CandleStickList
 	td := getTestData(20, 25, 15, 5)
 	tdList = append(tdList, *td)
 	res, count := isBearish(tdList)
@@ -118,7 +126,7 @@ func TestIsBearish(t *testing.T) {
 }
 
 func TestIsBearishCount(t *testing.T) {
-	var tdList []TradeDetails
+	var tdList []CandleStickList
 	td1 := getTestData(20, 25, 15, 5)
 	tdList = append(tdList, *td1)
 	td2 := getTestData(18, 23, 13, 3)
@@ -283,6 +291,36 @@ func TestDownTrend(t *testing.T) {
 	trend2, count2 := getShortTermTrend(td2)
 	assert.Equal(t, "decline", trend2)
 	assert.Equal(t, 4, count2)
+}
+
+func TestGetLowestLow(t *testing.T) {
+	var expected float64 = 15
+	td := getTrendList(downtrendData1)
+	res, _ := getLowestLow(td)
+	assert.Equal(t, res, expected)
+
+	td2 := getTrendList(uptrendData1)
+	res2, _ := getLowestLow(td2)
+	assert.Equal(t, res2, expected)
+
+	td3 := getTrendList(uptrendData2)
+	res3, _ := getLowestLow(td3)
+	assert.Equal(t, res3, expected)
+}
+
+func TestGeHighestHigh(t *testing.T) {
+	var expected float64 = 60
+	td := getTrendList(downtrendData1)
+	res, _ := getHighestHigh(td)
+	assert.Equal(t, res, expected)
+
+	td2 := getTrendList(uptrendData1)
+	res2, _ := getHighestHigh(td2)
+	assert.Equal(t, res2, expected)
+
+	td3 := getTrendList(uptrendData2)
+	res3, _ := getHighestHigh(td3)
+	assert.Equal(t, res3, expected)
 }
 
 func TestTime(t *testing.T) {

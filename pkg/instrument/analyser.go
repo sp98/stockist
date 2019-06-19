@@ -84,9 +84,12 @@ func (cs *CandleStick) Analyse() {
 		return
 	}
 	cs.Details = *csList
+	cs.PreviousTrade = getLastTrade(cs.Instrument.Token)
 
 	if len(cs.Details) > 3 {
-		cs.BuyLowSellHigh()
+		//cs.BuyLowSellHigh()
+		cs.PriceAction()
+
 	}
 }
 
@@ -266,4 +269,34 @@ func getUnit32(str string) uint32 {
 func getDate() string {
 	currentTime := time.Now()
 	return currentTime.Format("2006-01-02")
+}
+
+func getLowestLow(csList []CandleStickList) (float64, error) {
+	if len(csList) == 0 {
+		log.Println("No Data found")
+		return 0, fmt.Errorf("Error finding lowest Low. Candlestick list is empty")
+
+	}
+	low := csList[0].Low
+	for _, d := range csList {
+		if d.Low < low {
+			low = d.Low
+		}
+	}
+	return low, nil
+}
+
+func getHighestHigh(csList []CandleStickList) (float64, error) {
+	if len(csList) == 0 {
+		log.Println("No Data found")
+		return 0, fmt.Errorf("Error finding lowest Low. Candlestick list is empty")
+
+	}
+	high := csList[0].High
+	for _, d := range csList {
+		if d.High > high {
+			high = d.High
+		}
+	}
+	return high, nil
 }

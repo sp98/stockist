@@ -37,6 +37,7 @@ func (cs CandleStick) BuyLowSellHigh() {
 
 		if isBull || bullishMaru || bullishHammer || dozi {
 			if (shortTrend == "decline" && trendCount >= 3) || (bearTrend && bearCounts >= 3) || lhePattern >= 5 {
+				SendAlerts(fmt.Sprintf("BUY %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange))
 				if cs.Details[1].Low <= cs.getLowestPrice() { //TODO: Use CS data to get lowes price rather than querying DB
 					SendAlerts(fmt.Sprintf("BUY %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange))
 				}
@@ -79,6 +80,62 @@ func (cs CandleStick) BuyLowSellHigh() {
 		}
 
 	}
+}
+
+// PriceAction strategy
+func (cs CandleStick) PriceAction() {
+
+	previousDayLow := cs.Details[0].Low
+	lowestToday, _ := getLowestLow(cs.Details[:len(cs.Details)-1])
+	// previousDayHigh := cs.Details[0].High
+	// HighesToday, _ := getHighestHigh(cs.Details[:len(cs.Details)-1])
+	isBull, bullCount := isBullish(cs.Details)
+	isBear, bearCount := isBearish(cs.Details)
+
+	isDozi := isDozi(cs.Details[0])
+	bullishMaru := isBullishMarubuzo(cs.Details[0])
+	bearishMaru := isBearishMarubuzo(cs.Details[0])
+	bullishHammer := isBullishHammer(cs.Details[0])
+	bearishHammer := isBearishHammer(cs.Details[0])
+	shortTrend, shortTrendCount := getShortTermTrend(cs.Details[1:])
+	_, bearTrendCount := isBearish(cs.Details[1:])
+	_, bullTrendCount := isBullish(cs.Details[1:])
+	hhePattern := higherLowsEngulfingPatternCount(cs.Details)
+	lhePattern := lowerHighsEngulfingPatternCount(cs.Details)
+
+	if cs.PreviousTrade == "SOLD" || len(cs.PreviousTrade) == 0 {
+		if bearishHammer || bullishHammer || isBull || bullishMaru || isDozi {
+			if (shortTrend == "decline" && shortTrendCount >= 3) || (bearTrendCount >= 3 || bearCount >= 3) || lhePattern >= 5 {
+				if lowestToday > previousDayLow {
+					log.Printf("Instrument: %v", cs.Instrument.Name)
+					log.Printf("BUY %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
+					log.Printf("Previous Trade: %v :: Bearish Hammer: %v :: bullishHammer: %v :: isBull: %v :: BullishMaru:: %v :: isDozi: %v", cs.PreviousTrade, bearishHammer, bullishHammer, isBull, bullishMaru, isDozi)
+					log.Printf("shortTrend: %v :: shortTrendCount: %v :: bearTrendCount: %v :: bearCount: %v :: lhePattern:: %v", shortTrend, shortTrendCount, bearTrendCount, bearCount, lhePattern)
+					SendAlerts(fmt.Sprintf("BUY CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange))
+				}
+			}
+
+		}
+
+	} else if cs.PreviousTrade == "BOUGHT" {
+		if isBear || bearishMaru || isDozi {
+			if (shortTrend == "rally" && shortTrendCount >= 2) || (bullTrendCount >= 2 || bullCount >= 2) || hhePattern >= 3 {
+				log.Printf("Instrument: %v", cs.Instrument.Name)
+				log.Printf("SELL CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
+				log.Printf("Previous Trade: %v :: isBear: %v :: bearishMaru:  %v :: isDozi: %v", cs.PreviousTrade, isBear, bearishMaru, isDozi)
+				log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
+				SendAlerts(fmt.Sprintf("SELL  CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange))
+			}
+
+		} else if (shortTrend == "rally" && shortTrendCount >= 3) || (bullTrendCount >= 3 || bullCount >= 3) || hhePattern >= 3 {
+			log.Printf("Instrument: %v", cs.Instrument.Name)
+			log.Printf("SELL CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
+			log.Printf("Previous Trade: %v :: isBear: %v :: bearishMaru:  %v :: isDozi: %v", cs.PreviousTrade, isBear, bearishMaru, isDozi)
+			log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
+			SendAlerts(fmt.Sprintf("SELL CALL  %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange))
+		}
+	}
+
 }
 
 func updateTradeInDB(option, instToken string) {
