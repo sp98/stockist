@@ -56,4 +56,6 @@ var data = [][]string{
 	{"DABUR INDIA", "DABUR", "197633", "NSE", "5m"},
 	{"INDIAN OIL CORP", "IOC", "415745", "NSE", "5m"},
 	{"DEWAN HOUSING FIN CORP LT", "DHFL", "215553", "NSE", "5m"},
+	{"OIL AND NATURAL GAS CORP.", "ONGC", "633601", "NSE", "5m"},
+	{"BHARTI AIRTEL", "BHARTIARTL", "2714625", "NSE", "5m"},
 }

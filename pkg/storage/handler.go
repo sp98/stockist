@@ -123,8 +123,6 @@ func (db DB) StorePreviousDayOHLC(tickData *kiteticker.Tick) error {
 		"Low":               tick.OHLC.Low,
 		"Close":             tick.OHLC.Close,
 		"AverageTradePrice": tick.AverageTradePrice,
-		"TotalBuyQuantity":  tick.TotalBuyQuantity,
-		"TotalSellQuantity": tick.TotalSellQuantity,
 	}
 	tags := map[string]string{}
 

@@ -77,7 +77,7 @@ func (cs *CandleStick) startAnalysis() error {
 func (cs *CandleStick) Analyse() {
 
 	csList := cs.getTicks()
-	log.Printf("Aggregate results - %+v", csList)
+	//log.Printf("Aggregate results - %+v", csList)
 
 	if len(*csList) == 0 {
 		log.Println("Error: Candle Stick details are empty!")

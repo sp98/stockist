@@ -52,7 +52,7 @@ func onConnect(tokens []uint32) {
 		fmt.Println("err: ", err)
 	}
 
-	ticker.SetMode(kiteticker.ModeFull, tokens)
+	ticker.SetMode(kiteticker.ModeQuote, tokens)
 }
 
 // Triggered when tick is recevived
