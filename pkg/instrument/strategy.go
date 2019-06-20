@@ -138,7 +138,7 @@ func (cs CandleStick) PriceAction() {
 			log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
 			SendAlerts(fmt.Sprintf("SELL CALL  %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange))
 		}
-	} else if len(cs.PreviousTrade) == 0 && (highestToday > previousDayHigh) {
+	} else if len(cs.PreviousTrade) == 0 && (highestToday >= previousDayHigh) {
 		if isBear || bearishMaru || isDozi || invertedHammer {
 			if (shortTrend == "rally" && shortTrendCount >= 2) || (bullTrendCount >= 1 || bullCount >= 1) || hhePattern >= 3 {
 				{
