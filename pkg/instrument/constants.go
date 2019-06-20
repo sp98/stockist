@@ -58,4 +58,5 @@ var data = [][]string{
 	{"DEWAN HOUSING FIN CORP LT", "DHFL", "215553", "NSE", "5m"},
 	{"OIL AND NATURAL GAS CORP.", "ONGC", "633601", "NSE", "5m"},
 	{"BHARTI AIRTEL", "BHARTIARTL", "2714625", "NSE", "5m"},
+	{"HDFC STAND LIFE IN CO", "HDFCLIFE", "119553", "NSE", "5m"},
 }
