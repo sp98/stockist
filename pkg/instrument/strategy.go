@@ -111,12 +111,28 @@ func (cs CandleStick) PriceAction() {
 		if bearishHammer || bullishHammer || isBull || bullishMaru || isDozi {
 			if (shortTrend == "decline" && shortTrendCount >= 3) || (bearTrendCount >= 3 || bearCount >= 3) || lhePattern >= 5 {
 				if lowestToday > previousDayLow {
-					// log.Printf("Instrument: %v", cs.Instrument.Name)
+					//TODO: Check sensex data to see if market is moving up or down
 					log.Printf("BUY %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
 					log.Printf("Previous Trade: %v :: Bearish Hammer: %v :: bullishHammer: %v :: isBull: %v :: BullishMaru:: %v :: isDozi: %v", cs.PreviousTrade, bearishHammer, bullishHammer, isBull, bullishMaru, isDozi)
 					log.Printf("shortTrend: %v :: shortTrendCount: %v :: bearTrendCount: %v :: bearCount: %v :: lhePattern:: %v", shortTrend, shortTrendCount, bearTrendCount, bearCount, lhePattern)
-					SendAlerts(fmt.Sprintf("BUY CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange))
+					SendAlerts(fmt.Sprintf("BUY CALL %s - %s - %s :: MESSAGE: %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, "Ensure that market is moving up"))
 				}
+			}
+
+		}
+
+		if len(cs.PreviousTrade) == 0 {
+			if isBear || bearishMaru || isDozi || invertedHammer {
+				if (shortTrend == "rally" && shortTrendCount >= 3) || (bullTrendCount >= 3 || bullCount >= 3) || hhePattern >= 5 {
+					if highestToday <= previousDayHigh {
+						log.Printf("SHORT SELL CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
+						log.Printf("Previous Trade: %v :: isBear: %v :: bearishMaru:  %v :: isDozi: %v", cs.PreviousTrade, isBear, bearishMaru, isDozi)
+						log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
+						SendAlerts(fmt.Sprintf("SHORT SELL CALL %s - %s - %s :: MESSAGE: %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, "Ensure that market is falling down"))
+
+					}
+				}
+
 			}
 
 		}
@@ -124,33 +140,13 @@ func (cs CandleStick) PriceAction() {
 	} else if cs.PreviousTrade == "BOUGHT" {
 		if isBear || bearishMaru || isDozi {
 			if (shortTrend == "rally" && shortTrendCount >= 2) || (bullTrendCount >= 2 || bullCount >= 2) || hhePattern >= 3 {
-				// 	log.Printf("Instrument: %v", cs.Instrument.Name)
 				log.Printf("SELL CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
 				log.Printf("Previous Trade: %v :: isBear: %v :: bearishMaru:  %v :: isDozi: %v", cs.PreviousTrade, isBear, bearishMaru, isDozi)
 				log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
 				SendAlerts(fmt.Sprintf("SELL CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange))
 			}
 
-		} else if (shortTrend == "rally" && shortTrendCount >= 3) || (bullTrendCount >= 3 || bullCount >= 3) || hhePattern >= 3 {
-			//log.Printf("Instrument: %v", cs.Instrument.Name)
-			log.Printf("SELL CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
-			log.Printf("Previous Trade: %v :: isBear: %v :: bearishMaru:  %v :: isDozi: %v", cs.PreviousTrade, isBear, bearishMaru, isDozi)
-			log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
-			SendAlerts(fmt.Sprintf("SELL CALL  %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange))
 		}
-	} else if len(cs.PreviousTrade) == 0 && (highestToday >= previousDayHigh) {
-		if isBear || bearishMaru || isDozi || invertedHammer {
-			if (shortTrend == "rally" && shortTrendCount >= 2) || (bullTrendCount >= 1 || bullCount >= 1) || hhePattern >= 3 {
-				{
-					log.Printf("SHORT SELL CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
-					log.Printf("Previous Trade: %v :: isBear: %v :: bearishMaru:  %v :: isDozi: %v", cs.PreviousTrade, isBear, bearishMaru, isDozi)
-					log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
-					SendAlerts(fmt.Sprintf("SHORT SELL CALL %s - %s - %s :: MESSAGE: %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, "Ensure that market is falling down"))
-				}
-			}
-
-		}
-
 	}
 
 	log.Println("-----------------------------------------------------------------------------------------------------------------------")
