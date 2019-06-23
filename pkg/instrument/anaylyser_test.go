@@ -74,10 +74,6 @@ func getTestData(open, high, close, low float64) *CandleStickList {
 
 }
 
-func getCandleStick() {
-
-}
-
 func TestIsBullish(t *testing.T) {
 	var tdList []CandleStickList
 	td := getTestData(10, 20, 15, 5)

@@ -67,7 +67,7 @@ func (cs *CandleStick) startAnalysis() error {
 		stamp := <-t.C
 		log.Printf("Starting Analysis at %+v", stamp.Format(tstringFormat))
 		// do actual analysis here
-		time.Sleep(time.Second * 3)
+		time.Sleep(time.Second * 3) //Adding a wait for the continuous query to run
 		cs.Analyse()
 	}
 	return nil
@@ -84,12 +84,18 @@ func (cs *CandleStick) Analyse() {
 		return
 	}
 	cs.Details = *csList
-	cs.PreviousTrade = getLastTrade(cs.Instrument.Token)
+	cs.PreviousTrade = getLastTrade(cs.Instrument.Token) //TODO: Does not work with short sell scenario!
 
-	if len(cs.Details) > 3 {
-		//cs.BuyLowSellHigh()
-		cs.PriceAction()
+	if len(cs.Details) > 4 {
+		if cs.Instrument.Name == "SENSEX" {
+			cs.AnalyseSensex()
+		} else {
+			cs.PriceAction()
+		}
 
+	} else if len(cs.Details) == 3 {
+		//log.Println("Checking opening Trend")
+		cs.OpeningTrend()
 	}
 }
 

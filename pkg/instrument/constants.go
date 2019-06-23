@@ -14,8 +14,16 @@ var (
 	accessToken = os.Getenv("ACCESSTOKEN")
 )
 
+const (
+	buyStockChannel    = "#buy-stocks"
+	sellStockChannel   = "#sell-stocks"
+	openTrendChannel   = "#opening-trend"
+	sensexTrendChannel = "#sensex-trend"
+)
+
 var data = [][]string{
 	//Instrument Name, Sybmol, Token, Exchange, Interval
+	{"SENSEX", "SENSEX", "265", "BSE", "5m"},
 	{"YES BANK", "YESBANK", "3050241", "NSE", "5m"},
 	{"INDIABULLS HSG FIN", "IBULHSGFIN", "7712001", "NSE", "5m"},
 	{"ZEE ENTERTAINMENT ENT", "ZEEL", "975873", "NSE", "5m"},
@@ -59,4 +67,9 @@ var data = [][]string{
 	{"OIL AND NATURAL GAS CORP.", "ONGC", "633601", "NSE", "5m"},
 	{"BHARTI AIRTEL", "BHARTIARTL", "2714625", "NSE", "5m"},
 	{"HDFC STAND LIFE IN CO", "HDFCLIFE", "119553", "NSE", "5m"},
+	{"TATA MOTORS", "TATAMOTORS", "884737", "NSE", "5m"},
+	{"COAL INDIA", "COALINDIA", "5215745", "NSE", "5m"},
+	{"ITC", "ITC", "424961", "NSE", "5m"},
+	{"MARICO", "MARICO", "1041153", "NSE", "5m"},
+	{"WIPRO", "WIPRO", "969473", "NSE", "5m"},
 }

@@ -41,9 +41,9 @@ func StartProcessing() {
 		return
 	}
 
-	// Connect to web socket to get tick data.
+	// Connect to web socket to get tick data as a go routine
 	for _, subscription := range subscriptions {
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second * 2) //Wait as multiple websocket connections errors out randomly
 		go kite.StartTicker(subscription, accessToken)
 	}
 
