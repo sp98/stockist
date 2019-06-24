@@ -72,4 +72,6 @@ var data = [][]string{
 	{"ITC", "ITC", "424961", "NSE", "5m"},
 	{"MARICO", "MARICO", "1041153", "NSE", "5m"},
 	{"WIPRO", "WIPRO", "969473", "NSE", "5m"},
+	{"UPL", "UPL", "2889473", "NSE", "5m"},
+	{"BOMDYEING", "BOMDYEING", "131329", "NSE", "5m"},
 }
