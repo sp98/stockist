@@ -15,10 +15,11 @@ var (
 )
 
 const (
-	buyStockChannel    = "#buy-stocks"
-	sellStockChannel   = "#sell-stocks"
-	openTrendChannel   = "#opening-trend"
-	sensexTrendChannel = "#sensex-trend"
+	buyStockChannel        = "#buy-stocks"
+	sellStockChannel       = "#sell-stocks"
+	openTrendChannel       = "#opening-trend"
+	sensexTrendChannel     = "#sensex-trend"
+	shortSellStocksChannel = "#short-sell"
 )
 
 var data = [][]string{

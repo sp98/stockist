@@ -56,6 +56,8 @@ func getWebhook(channel string) string {
 		webhookURL = "https://hooks.slack.com/services/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"
 	} else if channel == sensexTrendChannel {
 		webhookURL = "https://hooks.slack.com/services/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"
+	} else if channel == shortSellStocksChannel {
+		webhookURL = "https://hooks.slack.com/services/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"
 	}
 
 	return webhookURL

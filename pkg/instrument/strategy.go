@@ -13,6 +13,12 @@ var separation = "---------------------------------------------------------"
 func (cs CandleStick) PriceAction() {
 	log.Printf("Instrument: %v", cs.Instrument.Name)
 	log.Printf("Previous Trade: %v", cs.PreviousTrade)
+	var previousDayTrend string
+	if cs.Details[len(cs.Details)-1].Close > cs.Details[len(cs.Details)-1].Open {
+		previousDayTrend = "uptrend"
+	} else {
+		previousDayTrend = "downtrend"
+	}
 	previousDayLow := cs.Details[len(cs.Details)-1].Low
 	lowestToday, _ := getLowestLow(cs.Details[:len(cs.Details)-1])
 	log.Printf("Previous Day Low: %v", previousDayLow)
@@ -41,7 +47,7 @@ func (cs CandleStick) PriceAction() {
 					log.Printf("BUY %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
 					log.Printf("Previous Trade: %v :: Bearish Hammer: %v :: bullishHammer: %v :: isBull: %v :: BullishMaru:: %v :: isDozi: %v", cs.PreviousTrade, bearishHammer, bullishHammer, isBull, bullishMaru, isDozi)
 					log.Printf("shortTrend: %v :: shortTrendCount: %v :: bearTrendCount: %v :: bearCount: %v :: lhePattern:: %v", shortTrend, shortTrendCount, bearTrendCount, bearCount, lhePattern)
-					msg := fmt.Sprintf("BUY CALL %s - %s - %s \n%s :: MESSAGE: %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, "Ensure that market is moving up", separation)
+					msg := fmt.Sprintf("BUY CALL ::  %s - %s - %s \nPreviousDayTrend : %s  \nMESSAGE : %s \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, previousDayTrend, "Ensure that market is moving up", separation)
 					SendAlerts(msg, buyStockChannel)
 				}
 			}
@@ -55,8 +61,8 @@ func (cs CandleStick) PriceAction() {
 						log.Printf("SHORT SELL CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
 						log.Printf("Previous Trade: %v :: isBear: %v :: bearishMaru:  %v :: isDozi: %v", cs.PreviousTrade, isBear, bearishMaru, isDozi)
 						log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
-						msg := fmt.Sprintf("SHORT SELL CALL %s - %s - %s \n%s :: MESSAGE: %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, "Ensure that market is falling down", separation)
-						SendAlerts(msg, sellStockChannel)
+						msg := fmt.Sprintf("SHORT SELL CALL :: %s - %s - %s \nMESSAGE: %s \nPreviousDayTrend : %s \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, "Ensure that market is falling down", previousDayTrend, separation)
+						SendAlerts(msg, shortSellStocksChannel)
 
 					}
 				}
@@ -71,7 +77,7 @@ func (cs CandleStick) PriceAction() {
 				log.Printf("SELL CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
 				log.Printf("Previous Trade: %v :: isBear: %v :: bearishMaru:  %v :: isDozi: %v", cs.PreviousTrade, isBear, bearishMaru, isDozi)
 				log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
-				msg := fmt.Sprintf("SELL CALL %s - %s - %s \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, separation)
+				msg := fmt.Sprintf("SELL CALL %s - %s - %s \nPreviousDayTrend : %s \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, separation, previousDayTrend)
 				SendAlerts(msg, sellStockChannel)
 			}
 
@@ -133,9 +139,9 @@ func (cs CandleStick) OpeningTrend() {
 //AnalyseSensex analyses the rally and declines in Sensex
 func (cs CandleStick) AnalyseSensex() {
 	log.Printf("Instrument: %v", cs.Instrument.Name)
-	previousDayLow := cs.Details[len(cs.Details)-1].Low
+	previousDayLow := cs.Details[len(cs.Details)-2].Low
 	lowestToday, _ := getLowestLow(cs.Details[:len(cs.Details)-1])
-	previousDayHigh := cs.Details[len(cs.Details)-1].High
+	previousDayHigh := cs.Details[len(cs.Details)-2].High
 	highestToday, _ := getHighestHigh(cs.Details[:len(cs.Details)-1])
 	isBull, bullCount := isBullish(cs.Details)
 	isBear, bearCount := isBearish(cs.Details)
