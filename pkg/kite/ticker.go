@@ -90,8 +90,6 @@ func onOrderUpdate(order kiteconnect.Order) {
 		alerts.SendAlerts(msg, alerts.TradeChannel)
 		updateTradeInDB("SOLD", strconv.FormatUint(uint64(order.InstrumentToken), 10))
 	} else if order.Status == "REJECTED" {
-		msg := fmt.Sprintf("REJECTED :: %s - %s", order.TradingSymbol, order.Exchange)
-		alerts.SendAlerts(msg, alerts.TradeChannel)
 		log.Printf("Last Order Got Rejected")
 	}
 }
