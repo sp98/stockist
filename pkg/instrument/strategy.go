@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	alerts "github.com/stockist/pkg/notification"
 	"github.com/stockist/pkg/storage"
 )
 
@@ -44,7 +45,7 @@ func (cs CandleStick) PriceAction() {
 					log.Printf("Previous Trade: %v :: Bearish Hammer: %v :: bullishHammer: %v :: isBull: %v :: BullishMaru:: %v :: isDozi: %v", cs.PreviousTrade, bearishHammer, bullishHammer, isBull, bullishMaru, isDozi)
 					log.Printf("shortTrend: %v :: shortTrendCount: %v :: bearTrendCount: %v :: bearCount: %v :: lhePattern:: %v", shortTrend, shortTrendCount, bearTrendCount, bearCount, lhePattern)
 					msg := fmt.Sprintf("BUY CALL ::  %s - %s - %s\nPrevious Day Trend: %s \nPrevious Day Change: %s \nMESSAGE : %s \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, prevDayTrend, prevDayChange, "Ensure that market is moving up", separation)
-					SendAlerts(msg, buyStockChannel)
+					alerts.SendAlerts(msg, alerts.BuyStockChannel)
 				}
 			}
 
@@ -58,7 +59,7 @@ func (cs CandleStick) PriceAction() {
 						log.Printf("Previous Trade: %v :: isBear: %v :: bearishMaru:  %v :: isDozi: %v", cs.PreviousTrade, isBear, bearishMaru, isDozi)
 						log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
 						msg := fmt.Sprintf("SHORT SELL CALL :: %s - %s - %s \nPrevious Day Trend: %s \nPrevious Day Change: %s \nMESSAGE: %s  \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, prevDayTrend, prevDayChange, "Ensure that market is falling down", separation)
-						SendAlerts(msg, shortSellStocksChannel)
+						alerts.SendAlerts(msg, alerts.ShortSellStocksChannel)
 
 					}
 				}
@@ -74,7 +75,7 @@ func (cs CandleStick) PriceAction() {
 				log.Printf("Previous Trade: %v :: isBear: %v :: bearishMaru:  %v :: isDozi: %v", cs.PreviousTrade, isBear, bearishMaru, isDozi)
 				log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
 				msg := fmt.Sprintf("SELL CALL %s - %s - %s \nPrevious Day Trend: %s \nPrevious Day Change: %s \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, prevDayTrend, prevDayChange, separation)
-				SendAlerts(msg, sellStockChannel)
+				alerts.SendAlerts(msg, alerts.SellStockChannel)
 			}
 
 		}
@@ -122,12 +123,12 @@ func (cs CandleStick) OpeningTrend() {
 		//Today's open is lower than previous day's Open
 		change := ((prevDayClose - openPrice) / prevDayClose) * 100
 		msg := fmt.Sprintf("OPENING TRADE :: %s - %s - %s \nOpen: %.2f \nPrevious Close: %.2f \nChange: -%.2f%% \n%s", name, symbol, exchange, openPrice, prevDayClose, change, separation)
-		SendAlerts(msg, openTrendChannel)
+		alerts.SendAlerts(msg, alerts.OpenTrendChannel)
 	} else if openPrice > prevDayClose {
 		//Today's open is greater than previous day's open
 		change := ((openPrice - prevDayClose) / openPrice) * 100
 		msg := fmt.Sprintf("OPENING TRADE :: %s - %s - %s \nOpen: %.2f \nPrevious Close: %.2f \nChange: +%.2f%% \n%s", name, symbol, exchange, openPrice, prevDayClose, change, separation)
-		SendAlerts(msg, openTrendChannel)
+		alerts.SendAlerts(msg, alerts.OpenTrendChannel)
 	}
 
 }
@@ -160,10 +161,10 @@ func (cs CandleStick) AnalyseSensex() {
 		if (shortTrend == "decline" && shortTrendCount >= 3) || (bearTrendCount >= 3 || bearCount >= 3) || lhePattern >= 4 || lhePatternTrend >= 4 {
 			if lowestToday > previousDayLow {
 				msg := fmt.Sprintf("%s \n%s", "ALERT: Sensex declined below previous day's low. Look to buy now", separation)
-				SendAlerts(msg, sensexTrendChannel)
+				alerts.SendAlerts(msg, alerts.SensexTrendChannel)
 			} else {
 				msg := fmt.Sprintf("%s \n%s", "ALERT: Sensex just declined. Look to buy now", separation)
-				SendAlerts(msg, sensexTrendChannel)
+				alerts.SendAlerts(msg, alerts.SensexTrendChannel)
 			}
 
 		}
@@ -171,10 +172,10 @@ func (cs CandleStick) AnalyseSensex() {
 		if (shortTrend == "rally" && shortTrendCount >= 3) || (bullTrendCount >= 3 || bullCount >= 3) || hhePattern >= 3 || hhePatternTrend >= 4 {
 			if highestToday >= previousDayHigh {
 				msg := fmt.Sprintf("%s \n%s", "ALERT: Sensex just rallied above previous day's high. Look to sell now", separation)
-				SendAlerts(msg, sensexTrendChannel)
+				alerts.SendAlerts(msg, alerts.SensexTrendChannel)
 			} else {
 				msg := fmt.Sprintf("%s \n%s", "ALERT: Sensex just rallied. Look to sell now", separation)
-				SendAlerts(msg, sensexTrendChannel)
+				alerts.SendAlerts(msg, alerts.SensexTrendChannel)
 			}
 
 		}

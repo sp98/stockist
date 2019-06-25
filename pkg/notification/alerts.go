@@ -1,7 +1,16 @@
-package instrument
+package notification
 
 import "github.com/ashwanthkumar/slack-go-webhook"
 import "fmt"
+
+const (
+	BuyStockChannel        = "#buy-stocks"
+	SellStockChannel       = "#sell-stocks"
+	OpenTrendChannel       = "#opening-trend"
+	SensexTrendChannel     = "#sensex-trend"
+	ShortSellStocksChannel = "#short-sell"
+	TradeChannel           = "#trade"
+)
 
 //OpeningTrade attachment format
 type OpeningTrade struct {
@@ -48,16 +57,18 @@ func SendAlerts(message, channel string) {
 
 func getWebhook(channel string) string {
 	var webhookURL string
-	if channel == openTrendChannel {
+	if channel == OpenTrendChannel {
 		webhookURL = "https://hooks.slack.com/services/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"
-	} else if channel == buyStockChannel {
+	} else if channel == BuyStockChannel {
 		webhookURL = "https://hooks.slack.com/services/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"
-	} else if channel == sellStockChannel {
+	} else if channel == SellStockChannel {
 		webhookURL = "https://hooks.slack.com/services/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"
-	} else if channel == sensexTrendChannel {
+	} else if channel == SensexTrendChannel {
 		webhookURL = "https://hooks.slack.com/services/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"
-	} else if channel == shortSellStocksChannel {
+	} else if channel == ShortSellStocksChannel {
 		webhookURL = "https://hooks.slack.com/services/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"
+	} else if channel == TradeChannel {
+		webhookURL = "https://hooks.slack.com/services/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"
 	}
 
 	return webhookURL

@@ -14,14 +14,6 @@ var (
 	accessToken = os.Getenv("ACCESSTOKEN")
 )
 
-const (
-	buyStockChannel        = "#buy-stocks"
-	sellStockChannel       = "#sell-stocks"
-	openTrendChannel       = "#opening-trend"
-	sensexTrendChannel     = "#sensex-trend"
-	shortSellStocksChannel = "#short-sell"
-)
-
 var data = [][]string{
 	//Instrument Name, Sybmol, Token, Exchange, Interval
 	{"SENSEX", "SENSEX", "265", "BSE", "5m"},

@@ -14,6 +14,7 @@ import (
 
 	kiteconnect "github.com/sp98/gokiteconnect"
 	kiteticker "github.com/sp98/gokiteconnect/ticker"
+	alerts "github.com/stockist/pkg/notification"
 	"github.com/stockist/pkg/storage"
 )
 
@@ -85,6 +86,8 @@ func onOrderUpdate(order kiteconnect.Order) {
 	if order.Status == "COMPLETE" && order.TransactionType == "BUY" {
 		updateTradeInDB("BOUGHT", strconv.FormatUint(uint64(order.InstrumentToken), 10))
 	} else if order.Status == "COMPLETE" && order.TransactionType == "SELL" {
+		msg := fmt.Sprintf("SOLD :: %s - %s", order.TradingSymbol, order.Exchange)
+		alerts.SendAlerts(msg, alerts.TradeChannel)
 		updateTradeInDB("SOLD", strconv.FormatUint(uint64(order.InstrumentToken), 10))
 	} else if order.Status == "REJECTED" {
 		log.Printf("Last Order Got Rejected")
