@@ -143,3 +143,9 @@ func TestAnalyseSensex(t *testing.T) {
 	cs4.AnalyseSensex()
 
 }
+
+func TestPreviousDayTrend(t *testing.T) {
+	trend, change := getPreviousDayTrend(4, 2)
+	t.Error(trend)
+	t.Error(change)
+}

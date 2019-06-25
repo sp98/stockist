@@ -13,12 +13,8 @@ var separation = "---------------------------------------------------------"
 func (cs CandleStick) PriceAction() {
 	log.Printf("Instrument: %v", cs.Instrument.Name)
 	log.Printf("Previous Trade: %v", cs.PreviousTrade)
-	var previousDayTrend string
-	if cs.Details[len(cs.Details)-1].Close > cs.Details[len(cs.Details)-1].Open {
-		previousDayTrend = "uptrend"
-	} else {
-		previousDayTrend = "downtrend"
-	}
+
+	prevDayTrend, prevDayChange := getPreviousDayTrend(cs.Details[len(cs.Details)-1].Open, cs.Details[len(cs.Details)-1].Close)
 	previousDayLow := cs.Details[len(cs.Details)-1].Low
 	lowestToday, _ := getLowestLow(cs.Details[:len(cs.Details)-1])
 	log.Printf("Previous Day Low: %v", previousDayLow)
@@ -47,7 +43,7 @@ func (cs CandleStick) PriceAction() {
 					log.Printf("BUY %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
 					log.Printf("Previous Trade: %v :: Bearish Hammer: %v :: bullishHammer: %v :: isBull: %v :: BullishMaru:: %v :: isDozi: %v", cs.PreviousTrade, bearishHammer, bullishHammer, isBull, bullishMaru, isDozi)
 					log.Printf("shortTrend: %v :: shortTrendCount: %v :: bearTrendCount: %v :: bearCount: %v :: lhePattern:: %v", shortTrend, shortTrendCount, bearTrendCount, bearCount, lhePattern)
-					msg := fmt.Sprintf("BUY CALL ::  %s - %s - %s \nPreviousDayTrend : %s  \nMESSAGE : %s \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, previousDayTrend, "Ensure that market is moving up", separation)
+					msg := fmt.Sprintf("BUY CALL ::  %s - %s - %s\nPrevious Day Trend: %s \nPrevious Day Change: %s \nMESSAGE : %s \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, prevDayTrend, prevDayChange, "Ensure that market is moving up", separation)
 					SendAlerts(msg, buyStockChannel)
 				}
 			}
@@ -61,7 +57,7 @@ func (cs CandleStick) PriceAction() {
 						log.Printf("SHORT SELL CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
 						log.Printf("Previous Trade: %v :: isBear: %v :: bearishMaru:  %v :: isDozi: %v", cs.PreviousTrade, isBear, bearishMaru, isDozi)
 						log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
-						msg := fmt.Sprintf("SHORT SELL CALL :: %s - %s - %s \nMESSAGE: %s \nPreviousDayTrend : %s \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, "Ensure that market is falling down", previousDayTrend, separation)
+						msg := fmt.Sprintf("SHORT SELL CALL :: %s - %s - %s \nPrevious Day Trend: %s \nPrevious Day Change: %s \nMESSAGE: %s  \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, prevDayTrend, prevDayChange, "Ensure that market is falling down", separation)
 						SendAlerts(msg, shortSellStocksChannel)
 
 					}
@@ -77,7 +73,7 @@ func (cs CandleStick) PriceAction() {
 				log.Printf("SELL CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
 				log.Printf("Previous Trade: %v :: isBear: %v :: bearishMaru:  %v :: isDozi: %v", cs.PreviousTrade, isBear, bearishMaru, isDozi)
 				log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
-				msg := fmt.Sprintf("SELL CALL %s - %s - %s \nPreviousDayTrend : %s \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, separation, previousDayTrend)
+				msg := fmt.Sprintf("SELL CALL %s - %s - %s \nPrevious Day Trend: %s \nPrevious Day Change: %s \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, prevDayTrend, prevDayChange, separation)
 				SendAlerts(msg, sellStockChannel)
 			}
 
@@ -184,6 +180,24 @@ func (cs CandleStick) AnalyseSensex() {
 		}
 
 	}
+
+}
+
+func getPreviousDayTrend(open, close float64) (string, string) {
+	var trend string
+	var change string
+	if open < close {
+		trend = "uptrend"
+		change = fmt.Sprintf("+%.2f%%", ((close-open)/close)*100)
+	} else if open > close {
+		trend = "downtrend"
+		change = fmt.Sprintf("-%.2f%%", ((open-close)/open)*100)
+	} else {
+		trend = "sideways"
+		change = "0.00"
+	}
+
+	return trend, change
 
 }
 func updateTradeInDB(option, instToken string) {
