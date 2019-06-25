@@ -75,4 +75,5 @@ var data = [][]string{
 	{"WIPRO", "WIPRO", "969473", "NSE", "5m"},
 	{"UPL", "UPL", "2889473", "NSE", "5m"},
 	{"BOMDYEING", "BOMDYEING", "131329", "NSE", "5m"},
+	{"LIC HOUSING FINANCE", "LICHSGFIN", "511233", "NSE", "5m"},
 }
