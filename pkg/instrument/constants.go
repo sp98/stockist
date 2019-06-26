@@ -68,4 +68,6 @@ var data = [][]string{
 	{"UPL", "UPL", "2889473", "NSE", "5m"},
 	{"BOMDYEING", "BOMDYEING", "131329", "NSE", "5m"},
 	{"LIC HOUSING FINANCE", "LICHSGFIN", "511233", "NSE", "5m"},
+	{"VOLTAS", "VOLTAS", "951809", "NSE", "5m"},
+	{"LARSEN & TOUBRO", "LT", "2939649", "NSE", "5m"},
 }
