@@ -191,6 +191,8 @@ func (ord Order) placeOrder() (*kiteconnect.OrderResponse, error) {
 			}
 		}
 
+		log.Printf("Waiting for %s order to be placed on %s", ord.Params.TransactionType, ord.Params.Tradingsymbol)
+
 	}
 
 	//return nil, fmt.Errorf("Order %+v didn't get execute", ord)
@@ -228,6 +230,7 @@ func (ord Order) exitOrder(orderID string) error {
 			}
 		}
 
+		log.Printf("Waiting for %s order to be placed on %s", ord.Params.TransactionType, ord.Params.Tradingsymbol)
 	}
 
 }
