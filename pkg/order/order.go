@@ -165,7 +165,7 @@ func (ord Order) execute(c chan string) {
 func (ord Order) placeOrder() (*kiteconnect.OrderResponse, error) {
 
 	for {
-		time.Sleep(1 * time.Second)
+		time.Sleep(500 * time.Millisecond)
 		ltp, err := ord.GetLastTradingPrice()
 		if err != nil {
 			log.Println("Error finding LTP for : ", ord.Params.Tradingsymbol)
@@ -208,7 +208,7 @@ func (ord Order) exitOrder(orderID string) error {
 	//ord.exit(orderIDs)
 
 	for {
-		time.Sleep(1 * time.Second)
+		time.Sleep(500 * time.Millisecond)
 		urp, _ := ord.GetUnRealisedProfit()
 		if urp < -5 { //400
 			err := ord.exit(orderID)
