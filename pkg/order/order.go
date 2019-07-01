@@ -3,6 +3,7 @@ package order
 import (
 	"fmt"
 	"log"
+	"time"
 
 	kiteconnect "github.com/sp98/gokiteconnect"
 	alerts "github.com/stockist/pkg/notification"
@@ -164,6 +165,7 @@ func (ord Order) execute(c chan string) {
 func (ord Order) placeOrder() (*kiteconnect.OrderResponse, error) {
 
 	for {
+		time.Sleep(2 * time.Second)
 		ltp, err := ord.GetLastTradingPrice()
 		if err != nil {
 			log.Println("Error finding LTP for : ", ord.Params.Tradingsymbol)
@@ -204,6 +206,7 @@ func (ord Order) exitOrder(orderID string) error {
 	//ord.exit(orderIDs)
 
 	for {
+		time.Sleep(2 * time.Second)
 		urp, _ := ord.GetUnRealisedProfit()
 		if urp < -5 { //400
 			err := ord.exit(orderID)
