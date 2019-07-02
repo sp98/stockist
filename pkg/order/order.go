@@ -363,6 +363,7 @@ func (ord Order) exitSellOrder(orderID string) error {
 		if err != nil {
 			return err
 		}
+		return nil
 	}
 	ltp, _ := ord.GetLastTradingPrice()
 	if ltp <= ord.SellParams.Target1 {
@@ -376,6 +377,7 @@ func (ord Order) exitSellOrder(orderID string) error {
 		if err != nil {
 			return err
 		}
+		return nil
 	}
 
 	return nil
