@@ -10,10 +10,9 @@ import (
 )
 
 var (
-	apiKey              = os.Getenv("APIKEY")
-	apiSecret           = os.Getenv("APISECRET")
-	accessToken         = os.Getenv("ACCESSTOKEN")
-	balance     float64 = 74000
+	apiKey      = os.Getenv("APIKEY")
+	apiSecret   = os.Getenv("APISECRET")
+	accessToken = os.Getenv("ACCESSTOKEN")
 )
 
 func getConnection() *kiteconnect.Client {
@@ -45,8 +44,11 @@ func (ord Order) GetLastTradingPrice() (float64, error) {
 
 //GetUnRealisedProfit returns unrealised profit and loss for the isntrument.
 func (ord Order) GetUnRealisedProfit() (float64, error) {
-	pos, _ := ord.KC.GetPositions()
-	//log.Printf("Positions : %+v\n", pos)
+	pos, err := ord.KC.GetPositions()
+	if err != nil {
+		return 0, err
+	}
+	log.Printf("Positions : %+v\n", pos)
 
 	for _, pos := range pos.Net {
 		if pos.InstrumentToken == getUnit32(ord.Token) {
@@ -84,20 +86,33 @@ func (ord Order) GetClosePrice() (float64, error) {
 }
 
 //ExecuteOrder executes an order
-func (ord Order) ExecuteOrder() (*kiteconnect.OrderResponse, error) {
-	log.Printf("Executing Order : %+v\n", ord)
-	log.Printf("Order Params : %+v\n", ord.Params)
+func (ord Order) ExecuteOrder(tradeType string) (*kiteconnect.OrderResponse, error) {
+
 	ltp, _ := ord.GetLastTradingPrice() //Update price to Latest LTP
-	ord.Params.Price = ltp
-	res, err := ord.KC.PlaceOrder(ord.Variety, *ord.Params)
-	if err != nil {
-		log.Println("Error: Order execution failed :", err)
-		return nil, err
+	if tradeType == "BUY" {
+		log.Printf("Executing Buy Order : %+v\n", ord)
+		log.Printf("Order Params : %+v\n", ord.BuyParams.Params)
+		ord.BuyParams.Params.Price = ltp
+		res, err := ord.KC.PlaceOrder(ord.Variety, *ord.BuyParams.Params)
+		if err != nil {
+			log.Println("Error: Buy Order execution failed :", err)
+			return nil, err
+		}
+		return &res, nil
+
+	} else if tradeType == "SELL" {
+		log.Printf("Executing SELL Order : %+v\n", ord)
+		log.Printf("Order Params : %+v\n", ord.SellParams.Params)
+		ord.SellParams.Params.Price = ltp
+		res, err := ord.KC.PlaceOrder(ord.Variety, *ord.SellParams.Params)
+		if err != nil {
+			log.Println("Error: Sell Order execution failed :", err)
+			return nil, err
+		}
+		return &res, nil
 	}
 
-	log.Printf("Order Execution Response : %+v\n", res)
-
-	return &res, nil
+	return nil, fmt.Errorf("Order didnot execute")
 
 }
 
@@ -193,6 +208,35 @@ func (ord Order) GetSecondLegOrderID(parentID string) (string, error) {
 
 	return "", fmt.Errorf("No Second Leg Order found")
 
+}
+
+//PositionCreated checks if the position is already created
+func (ord Order) PositionCreated() bool {
+	positions, _ := ord.KC.GetPositions()
+	//log.Printf("Positions %+v", positions)
+	for _, pos := range positions.Net {
+		if pos.Tradingsymbol == ord.Symbol {
+			return true
+		}
+	}
+
+	return false
+}
+
+//PendingBOOrders check if any pending BOs are present or not
+func (ord Order) PendingBOOrders() (bool, string, string) {
+	orders, _ := ord.KC.GetOrders()
+	//log.Printf("Orders %+v", orders)
+	for _, order := range orders {
+		if order.TradingSymbol == ord.Symbol {
+			if order.Status == "TRIGGER PENDING" || order.Status == "OPEN" {
+				// if order.Status == "COMPLETE" {
+				return true, order.TransactionType, order.ParentOrderID
+			}
+		}
+	}
+
+	return false, "", ""
 }
 
 func getUnit32(str string) uint32 {

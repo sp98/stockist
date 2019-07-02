@@ -2,83 +2,100 @@ package order
 
 //BOInput is the input struct for Buy Orders
 type BOInput struct {
-	Symbol          string
-	Token           string
-	Exchange        string
-	Product         string
-	Price           float64
-	StopLoss        float64
-	Target1         float64
-	Target2         float64
-	TransactionType string
-	OrderType       string
-	Variety         string
-	Quantity        int
-	Validity        string
-}
-
-//SOInput is the input struct for Sell Orders
-type SOInput struct {
-	Symbol          string
-	Token           string
-	Exchange        string
-	Product         string
-	SellPrice       float64
-	SellStopLoss    float64
-	SellTarget1     float64
-	SellTarget2     float64
-	TransactionType string
-	OrderType       string
-	Variety         string
-	Quantity        int
-	Validity        string
+	Symbol       string
+	Token        string
+	Exchange     string
+	Product      string
+	BuyPrice     float64
+	BuyStopLoss  float64
+	BuyTarget1   float64
+	BuyTarget2   float64
+	SellPrice    float64
+	SellStopLoss float64
+	SellTarget1  float64
+	SellTarget2  float64
+	OrderType    string
+	Variety      string
+	Quantity     int
+	Validity     string
 }
 
 //BuyOrders a list of buy ordres
 var BuyOrders = []BOInput{
-	// {
-	// 	Symbol:          "ADANIPORTS",
-	// 	Token:           "3861249",
-	// 	Exchange:        "NSE",
-	// 	Variety:         "bo",
-	// 	Product:         "MIS",
-	// 	OrderType:       "LIMIT",
-	// 	TransactionType: "BUY",
-	// 	Validity:        "DAY",
-	// 	Price:           409,
-	// 	StopLoss:        405,
-	// 	Target1:         418,
-	// 	Target2:         422,
-	// },
+
 	{
-		Symbol:          "BALKRISIND",
-		Token:           "85761",
-		Exchange:        "NSE",
-		Variety:         "bo",
-		Product:         "MIS",
-		OrderType:       "LIMIT",
-		TransactionType: "BUY",
-		Validity:        "DAY",
-		Price:           765,
-		StopLoss:        755,
-		Target1:         775,
-		Target2:         785,
-		Quantity:        1,
+		Symbol:       "ADANIPORTS",
+		Token:        "3861249",
+		Exchange:     "NSE",
+		Variety:      "bo",
+		Product:      "MIS",
+		OrderType:    "LIMIT",
+		Validity:     "DAY",
+		SellPrice:    0,
+		SellStopLoss: 0,
+		SellTarget1:  0,
+		SellTarget2:  0,
+		Quantity:     500,
+		BuyPrice:     414,
+		BuyStopLoss:  413,
+		BuyTarget1:   417,
+		BuyTarget2:   417,
 	},
 
 	{
-		Symbol:          "BALKRISIND",
-		Token:           "85761",
-		Exchange:        "NSE",
-		Variety:         "bo",
-		Product:         "MIS",
-		OrderType:       "LIMIT",
-		TransactionType: "SELL",
-		Validity:        "DAY",
-		Price:           753,
-		StopLoss:        763,
-		Target1:         743,
-		Target2:         733,
-		Quantity:        1,
+		Symbol:       "UBL",
+		Token:        "4278529",
+		Exchange:     "NSE",
+		Variety:      "bo",
+		Product:      "MIS",
+		OrderType:    "LIMIT",
+		Validity:     "DAY",
+		SellPrice:    1352,
+		SellStopLoss: 1362,
+		SellTarget1:  1342,
+		SellTarget2:  1332,
+		Quantity:     200,
+		BuyPrice:     1365,
+		BuyStopLoss:  1355,
+		BuyTarget1:   1375,
+		BuyTarget2:   1380,
+	},
+
+	{
+		Symbol:       "JUSTDIAL",
+		Token:        "7670273",
+		Exchange:     "NSE",
+		Variety:      "bo",
+		Product:      "MIS",
+		OrderType:    "LIMIT",
+		Validity:     "DAY",
+		SellPrice:    758,
+		SellStopLoss: 768,
+		SellTarget1:  748,
+		SellTarget2:  738,
+		Quantity:     200,
+		BuyPrice:     769,
+		BuyStopLoss:  759,
+		BuyTarget1:   779,
+		BuyTarget2:   785,
+	},
+
+	{
+		Symbol:       "ESCORTS",
+		Token:        "245249",
+		Exchange:     "NSE",
+		Variety:      "bo",
+		Product:      "MIS",
+		OrderType:    "LIMIT",
+		Validity:     "DAY",
+		SellPrice:    0,
+		SellStopLoss: 0,
+		SellTarget1:  0,
+		SellTarget2:  0,
+		Quantity:     500,
+		BuyPrice:     574,
+		BuyStopLoss:  572,
+		BuyTarget1:   580,
+		BuyTarget2:   580,
 	},
 }

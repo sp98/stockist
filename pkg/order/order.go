@@ -18,11 +18,28 @@ type Order struct {
 	KC            *kiteconnect.Client //Kite Trading Client
 	Variety       string
 	Token         string //Instruement token
-	Target1       float64
-	Target2       float64
+	Symbol        string
+	Exchange      string
 	PreviousClose float64
 	OpenPrice     float64
-	Params        *kiteconnect.OrderParams
+	Status        string
+	OrderID       string
+	BuyParams     *BuyParams
+	SellParams    *SellParams
+}
+
+//BuyParams are parameters when buying a stock
+type BuyParams struct {
+	Target1 float64
+	Target2 float64
+	Params  *kiteconnect.OrderParams
+}
+
+//SellParams are parameters when Selling a stock
+type SellParams struct {
+	Target1 float64
+	Target2 float64
+	Params  *kiteconnect.OrderParams
 }
 
 //Status struct to tract the status of an order.
@@ -43,44 +60,81 @@ type RejectedOrder struct {
 func New() *[]Order {
 	orderList := []Order{}
 	kc := getConnection()
+	bParams := &BuyParams{}
+	sParams := &SellParams{}
 
 	for _, order := range BuyOrders {
-		var sl float64
-		var so float64
-		if order.TransactionType == "BUY" {
-			sl = order.Price - order.StopLoss
-			if order.Target2 != 0 {
-				so = order.Target2 - order.Price
-			} else {
-				so = order.Target1 - order.Price
+		var bsl float64
+		var bso float64
+		var ssl float64
+		var sso float64
+
+		bsl = order.BuyPrice - order.BuyStopLoss
+		if order.BuyTarget2 != 0 {
+			bso = order.BuyTarget2 - order.BuyPrice
+		} else {
+			bso = order.BuyTarget1 - order.BuyPrice
+		}
+
+		ssl = order.SellStopLoss - order.SellPrice
+		if order.SellTarget2 != 0 {
+			sso = order.SellPrice - order.SellTarget2
+		} else {
+			sso = order.SellPrice - order.SellTarget1
+		}
+
+		if order.BuyPrice == 0 {
+			bParams = nil
+		} else {
+			bParams =
+				&BuyParams{
+					Target1: order.BuyTarget1,
+					Target2: order.BuyTarget2,
+					Params: &kiteconnect.OrderParams{
+						Product:         order.Product,
+						Exchange:        order.Exchange,
+						Tradingsymbol:   order.Symbol,
+						OrderType:       order.OrderType,
+						Price:           order.BuyPrice,
+						TransactionType: "BUY",
+						Stoploss:        float64(bsl),
+						Squareoff:       float64(bso),
+						Quantity:        order.Quantity,
+						Validity:        order.Validity,
+					},
+				}
+
+		}
+
+		if order.SellPrice == 0 {
+			sParams = nil
+		} else {
+			sParams = &SellParams{
+				Target1: order.SellTarget1,
+				Target2: order.SellTarget2,
+				Params: &kiteconnect.OrderParams{
+					Product:         order.Product,
+					Exchange:        order.Exchange,
+					Tradingsymbol:   order.Symbol,
+					OrderType:       order.OrderType,
+					Price:           order.SellPrice,
+					TransactionType: "SELL",
+					Stoploss:        float64(ssl),
+					Squareoff:       float64(sso),
+					Quantity:        order.Quantity,
+					Validity:        order.Validity,
+				},
 			}
 
-		} else if order.TransactionType == "SELL" {
-			sl = order.StopLoss - order.Price
-			if order.Target2 != 0 {
-				so = order.Price - order.Target2
-			} else {
-				so = order.Price - order.Target1
-			}
 		}
 		ord := &Order{
-			KC:      kc,
-			Token:   order.Token,
-			Variety: order.Variety,
-			Target1: order.Target1,
-			Target2: order.Target2,
-			Params: &kiteconnect.OrderParams{
-				Product:         order.Product,
-				Exchange:        order.Exchange,
-				Tradingsymbol:   order.Symbol,
-				OrderType:       order.OrderType,
-				Price:           order.Price,
-				TransactionType: order.TransactionType,
-				Stoploss:        float64(sl),
-				Squareoff:       float64(so),
-				Quantity:        order.Quantity,
-				Validity:        order.Validity,
-			},
+			KC:         kc,
+			Token:      order.Token,
+			Symbol:     order.Symbol,
+			Exchange:   order.Exchange,
+			Variety:    order.Variety,
+			BuyParams:  bParams,
+			SellParams: sParams,
 		}
 		orderList = append(orderList, *ord)
 
@@ -100,16 +154,46 @@ func Start() {
 	}
 
 	log.Printf("Orders to be executed today: %+v", len(*orders))
-	for _, ord := range *orders {
-		log.Printf("Order %+v", ord)
-		log.Printf("Order Param %+v", ord.Params)
-		log.Println("*************************")
-	}
+	// for _, ord := range *orders {
+	// 	log.Printf("Order %+v", ord)
+	// 	log.Printf("Order Buy Param %+v", ord.BuyParams)
+	// 	log.Printf("Order Buy Order Params %+v", ord.BuyParams.Params)
+	// 	log.Printf("Order Sell Param %+v", ord.SellParams)
+	// 	log.Printf("Order Sell Order Param %+v", ord.SellParams.Params)
+	// 	log.Println("*************************")
+	// }
 
 	c := make(chan string)
 
-	for _, order := range *orders {
-		go order.execute(c)
+	for i, order := range *orders {
+		ord := &order
+
+		//Verify if the order is already created
+		posCreated := ord.PositionCreated()
+
+		if posCreated {
+			//Check if there are pending BO second leg orders for the stock
+			pendingOrders, tradeType, parentOrderID := ord.PendingBOOrders()
+			ord.OrderID = parentOrderID
+			if pendingOrders {
+				log.Printf("Position already created but pending BO orders are available for Stock - %s", ord.Symbol)
+				if tradeType == "SELL" {
+					ord.Status = "BOUGHT"
+				} else if tradeType == "BUY" {
+					ord.Status = "SOLD"
+				}
+
+			} else {
+				log.Printf("Position already created and no pending BO orders are available for Stock - %s", ord.Symbol)
+				if i == len(*orders)-1 {
+					return //becuase no more orders are there to execute
+				}
+				continue
+			}
+		}
+
+		go ord.execute(c)
+
 	}
 
 	for i := 0; i < len(*orders); i++ {
@@ -119,79 +203,103 @@ func Start() {
 }
 
 func (ord Order) execute(c chan string) {
-
+	var orderID string
 	prevClose, err := ord.GetClosePrice()
 	if err != nil {
-		log.Printf("Error finding Previous day close Price for the Instrument : %+v", ord.Params.Tradingsymbol)
+		log.Printf("Error finding Previous day close Price for the Instrument : %+v", ord.Symbol)
 	}
 
 	ord.PreviousClose = prevClose
 	openPrice, err := ord.GetOpenPrice()
 
 	if err != nil {
-		log.Printf("Error finding Opening Price for the Instrument : %+v", ord.Params.Tradingsymbol)
+		log.Printf("Error finding Opening Price for the Instrument : %+v", ord.Symbol)
 	}
 
 	ord.OpenPrice = openPrice
 
-	orderResp, err := ord.placeOrder()
-	if err != nil {
-		msg := fmt.Sprintf("Error Placing Order: %+v", err)
-		log.Println(msg)
+	//If Position is already created for this Stock, then skip placing new order.
+	if ord.Status == "BOUGHT" || ord.Status == "SOLD" {
+		orderID = ord.OrderID
+	} else {
+		orderResp, err := ord.placeOrder()
+		if err != nil {
+			msg := fmt.Sprintf("Error Placing Order: %+v", err)
+			log.Println(msg)
+			alerts.SendAlerts(msg, alerts.ErrorChannel)
+			c <- "complete"
+			return
+		}
+		orderID = orderResp.OrderID
+	}
+
+	if len(orderID) == 0 {
+		msg := fmt.Sprintf("Failure: Order ID not received for the stock - %s. EXIT THE BO MANUALLY", ord.Symbol)
 		alerts.SendAlerts(msg, alerts.ErrorChannel)
+		c <- "FAILED"
 		return
 	}
 
-	status, err := ord.getOrderStatus(orderResp.OrderID)
-
+	status, err := ord.getOrderStatus(orderID)
+	log.Println("Order status -- ", status)
 	if status == "REJECTED" {
-		//Send Notification
-		ord.notfiyOrderRejection(orderResp.OrderID)
+		log.Println("Order rejected for: ", ord.Symbol)
+		ord.notfiyOrderRejection(orderID)
 		c <- "REJECTED"
 		return
 	} else if status == "COMPLETE" {
-		ord.notfiyOrderCompletion(orderResp.OrderID)
+		ord.notfiyOrderCompletion(orderID)
 	}
 
-	err = ord.exitOrder(orderResp.OrderID)
+	err = ord.exitOrder(orderID)
 	if err != nil {
 		msg := fmt.Sprintf("Order Exit Failed")
 		alerts.SendAlerts(msg, alerts.ErrorChannel)
+		c <- "FAILED"
 	}
 
 	c <- "complete"
 }
 
-func (ord Order) placeOrder() (*kiteconnect.OrderResponse, error) {
+func (ord *Order) placeOrder() (*kiteconnect.OrderResponse, error) {
+
+	//If order.status is not empty then get the existing orders Id from Position
 
 	for {
+
 		time.Sleep(500 * time.Millisecond)
 		ltp, err := ord.GetLastTradingPrice()
 		if err != nil {
-			log.Println("Error finding LTP for : ", ord.Params.Tradingsymbol)
+			log.Println("Error finding LTP for : ", ord.Symbol)
 			//return orderIDs, err
 		}
-		//log.Println("LTP Price : ", ltp)
-		if ord.Params.TransactionType == "BUY" { //ord.OpenPrice < ord.PreviousClose &&
-			if ord.OpenPrice < ord.Params.Price && ltp >= ord.Params.Price {
-				orderResp, err := ord.ExecuteOrder()
-				if err != nil {
-					return nil, err
-				}
-				return orderResp, nil
-			}
 
-		} else if ord.Params.TransactionType == "SELL" { // ord.OpenPrice > ord.PreviousClose
-			if ord.OpenPrice > ord.Params.Price && ltp <= ord.Params.Price {
-				orderResp, err := ord.ExecuteOrder()
+		//log.Println("LTP Price : ", ltp)
+		if ord.BuyParams != nil {
+			if ord.OpenPrice < ord.BuyParams.Params.Price && ltp >= ord.BuyParams.Params.Price {
+				orderResp, err := ord.ExecuteOrder("BUY")
+				ord.Status = "BOUGHT"
 				if err != nil {
 					return nil, err
 				}
+
 				return orderResp, nil
 			}
 		}
 
-		log.Printf("Waiting for %s order to be placed on %s", ord.Params.TransactionType, ord.Params.Tradingsymbol)
+		if ord.SellParams != nil {
+			if ord.OpenPrice > ord.SellParams.Params.Price && ltp <= ord.SellParams.Params.Price {
+				orderResp, err := ord.ExecuteOrder("SELL")
+				if err != nil {
+					return nil, err
+				}
+				ord.Status = "SOLD"
+				return orderResp, nil
+			}
+
+		}
+
+		log.Printf("Waiting for order to be placed on %s", ord.Symbol)
 
 	}
 
@@ -199,7 +307,7 @@ func (ord Order) placeOrder() (*kiteconnect.OrderResponse, error) {
 
 }
 
-func (ord Order) exitOrder(orderID string) error {
+func (ord *Order) exitOrder(orderID string) error {
 	//Exit Order when:
 	// 1 - Profit goes less than 400
 	// 2 - LTP greater than Target 2
@@ -209,30 +317,68 @@ func (ord Order) exitOrder(orderID string) error {
 
 	for {
 		time.Sleep(500 * time.Millisecond)
-		urp, _ := ord.GetUnRealisedProfit()
-		if urp < -5 { //400
-			err := ord.exit(orderID)
-			if err != nil {
-				return err
-			}
-		}
-		ltp, _ := ord.GetLastTradingPrice()
-		if ltp > ord.Target1 {
-			msg := fmt.Sprintf("Target1 Achieved: \n Instrument:%s \nOrder: %s", ord.Params.Tradingsymbol, ord.Params.TransactionType)
-			alerts.SendAlerts(msg, alerts.TradeChannel)
-			//update order to change trigger price
+
+		if ord.Status == "BOUGHT" {
+			ord.exitBuyOrder(orderID)
+		} else if ord.Status == "SOLD" {
+			ord.exitSellOrder(orderID)
 		}
 
-		if ltp > ord.Target2 {
-			err := ord.exit(orderID)
-			if err != nil {
-				return err
-			}
-		}
-
-		log.Printf("Waiting for %s order to be placed on %s", ord.Params.TransactionType, ord.Params.Tradingsymbol)
+		log.Printf("Waiting for %s order to be placed on %s", "SELL", ord.Symbol)
 	}
 
+}
+
+func (ord Order) exitBuyOrder(orderID string) error {
+	urp, _ := ord.GetUnRealisedProfit()
+
+	if urp < -700 { //400
+		err := ord.exit(orderID)
+		if err != nil {
+			return err
+		}
+	}
+	ltp, _ := ord.GetLastTradingPrice()
+	if ltp >= ord.BuyParams.Target1 {
+		msg := fmt.Sprintf("Target1 Achieved: \n Instrument:%s ", ord.Symbol)
+		alerts.SendAlerts(msg, alerts.TradeChannel)
+		//update order to change trigger price
+	}
+
+	if ltp >= ord.BuyParams.Target2 {
+		err := ord.exit(orderID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (ord Order) exitSellOrder(orderID string) error {
+	urp, _ := ord.GetUnRealisedProfit()
+
+	if urp < -700 { //400
+		err := ord.exit(orderID)
+		if err != nil {
+			return err
+		}
+	}
+	ltp, _ := ord.GetLastTradingPrice()
+	if ltp <= ord.SellParams.Target1 {
+		msg := fmt.Sprintf("Target1 Achieved: \n Instrument:%s", ord.Symbol)
+		alerts.SendAlerts(msg, alerts.TradeChannel)
+		//update order to change trigger price
+	}
+
+	if ltp <= ord.SellParams.Target2 {
+		err := ord.exit(orderID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (ord Order) exit(parentOrderID string) error {
@@ -245,7 +391,7 @@ func (ord Order) exit(parentOrderID string) error {
 	log.Printf("Second Leg Order ID %+v", secondLegOrderID)
 	_, err = ord.KC.ExitOrder(ord.Variety, secondLegOrderID, &parentOrderID)
 	if err != nil {
-		log.Printf("Error exeting the order - %+v", err)
+		log.Printf("Error executing the order - %+v", err)
 		return err
 	}
 
@@ -255,14 +401,14 @@ func (ord Order) exit(parentOrderID string) error {
 //Notify events on Slack
 func (ord Order) notfiyOrderRejection(id string) {
 
-	msg := fmt.Sprintf("ORDER REJECTED \nStock: %s \nExchange: %s \nOrderID: %s \n%s", ord.Params.Tradingsymbol, ord.Params.Exchange, id, separation)
+	msg := fmt.Sprintf("ORDER REJECTED \nStock: %s \nExchange: %s \nOrderID: %s \n%s", ord.Symbol, ord.Exchange, id, separation)
 	alerts.SendAlerts(msg, alerts.ErrorChannel)
 
 }
 
 //Notify events on Slack
 func (ord Order) notfiyOrderCompletion(id string) {
-	msg := fmt.Sprintf("ORDER COMPLETED \nStock: %s \nExchange: %s \nOrderID: %s \n%s", ord.Params.Tradingsymbol, ord.Params.Exchange, id, separation)
+	msg := fmt.Sprintf("ORDER COMPLETED \nStock: %s \nExchange: %s \nOrderID: %s \n%s", ord.Symbol, ord.Exchange, id, separation)
 	alerts.SendAlerts(msg, alerts.TradeChannel)
 
 }
