@@ -26,6 +26,7 @@ type Order struct {
 	OrderID       string
 	BuyParams     *BuyParams
 	SellParams    *SellParams
+	MaxLoss       float64
 }
 
 //BuyParams are parameters when buying a stock
@@ -133,6 +134,7 @@ func New() *[]Order {
 			Symbol:     order.Symbol,
 			Exchange:   order.Exchange,
 			Variety:    order.Variety,
+			MaxLoss:    order.MaxLoss,
 			BuyParams:  bParams,
 			SellParams: sParams,
 		}
@@ -159,9 +161,10 @@ func Start() {
 	// 	log.Printf("Order Buy Param %+v", ord.BuyParams)
 	// 	log.Printf("Order Buy Order Params %+v", ord.BuyParams.Params)
 	// 	log.Printf("Order Sell Param %+v", ord.SellParams)
-	// 	log.Printf("Order Sell Order Param %+v", ord.SellParams.Params)
+	// 	// log.Printf("Order Sell Order Param %+v", ord.SellParams.Params)
 	// 	log.Println("*************************")
 	// }
+	//panic(1)
 
 	c := make(chan string)
 
@@ -240,16 +243,24 @@ func (ord Order) execute(c chan string) {
 		return
 	}
 
-	status, err := ord.getOrderStatus(orderID)
-	log.Println("Order status -- ", status)
-	if status == "REJECTED" {
-		log.Println("Order rejected for: ", ord.Symbol)
-		ord.notfiyOrderRejection(orderID)
-		c <- "REJECTED"
-		return
-	} else if status == "COMPLETE" {
-		ord.notfiyOrderCompletion(orderID)
+	orderStatus, _ := ord.getOrderStatus(orderID)
+	log.Println("Order status -- ", orderStatus)
+
+	// statusRetry := 0
+	for orderStatus != "COMPLETE" {
+		if orderStatus == "REJECTED" {
+			log.Println("Order rejected for: ", ord.Symbol)
+			ord.notfiyOrderRejection(orderID)
+			c <- "REJECTED"
+			return
+		}
+		log.Printf("Waiting for Order to COMPELTE for %+v. Current status: %s", ord.Symbol, orderStatus)
+		time.Sleep(500 * time.Millisecond)
+		// statusRetry = statusRetry + 1
+		orderStatus, _ = ord.getOrderStatus(orderID)
 	}
+
+	ord.notfiyOrderCompletion(orderID)
 
 	err = ord.exitOrder(orderID)
 	if err != nil {
@@ -263,20 +274,17 @@ func (ord Order) execute(c chan string) {
 
 func (ord *Order) placeOrder() (*kiteconnect.OrderResponse, error) {
 
-	//If order.status is not empty then get the existing orders Id from Position
-
 	for {
-
 		time.Sleep(500 * time.Millisecond)
 		ltp, err := ord.GetLastTradingPrice()
 		if err != nil {
 			log.Println("Error finding LTP for : ", ord.Symbol)
-			//return orderIDs, err
+			continue
 		}
 
 		//log.Println("LTP Price : ", ltp)
 		if ord.BuyParams != nil {
-			if ord.OpenPrice < ord.BuyParams.Params.Price && ltp >= ord.BuyParams.Params.Price {
+			if ord.OpenPrice < ord.BuyParams.Params.Price && ltp > ord.BuyParams.Params.Price {
 				orderResp, err := ord.ExecuteOrder("BUY")
 				ord.Status = "BOUGHT"
 				if err != nil {
@@ -288,7 +296,7 @@ func (ord *Order) placeOrder() (*kiteconnect.OrderResponse, error) {
 		}
 
 		if ord.SellParams != nil {
-			if ord.OpenPrice > ord.SellParams.Params.Price && ltp <= ord.SellParams.Params.Price {
+			if ord.OpenPrice > ord.SellParams.Params.Price && ltp < ord.SellParams.Params.Price {
 				orderResp, err := ord.ExecuteOrder("SELL")
 				if err != nil {
 					return nil, err
@@ -308,79 +316,131 @@ func (ord *Order) placeOrder() (*kiteconnect.OrderResponse, error) {
 }
 
 func (ord *Order) exitOrder(orderID string) error {
-	//Exit Order when:
-	// 1 - Profit goes less than 400
-	// 2 - LTP greater than Target 2
-	// If ltp is greate than Target 1 then update order the order with stop lose of Target 1
-	log.Printf("Exiting Order  : %+v", orderID)
-	//ord.exit(orderIDs)
 
-	for {
-		time.Sleep(500 * time.Millisecond)
+	log.Printf("Exiting Order: %+v for Stock: %s that was %s", orderID, ord.Symbol, ord.Status)
 
-		if ord.Status == "BOUGHT" {
-			ord.exitBuyOrder(orderID)
-		} else if ord.Status == "SOLD" {
-			ord.exitSellOrder(orderID)
-		}
-
-		log.Printf("Waiting for %s order to be placed on %s", "SELL", ord.Symbol)
+	if ord.Status == "BOUGHT" {
+		return ord.exitBuyOrder(orderID)
+	} else if ord.Status == "SOLD" {
+		return ord.exitSellOrder(orderID)
 	}
 
+	log.Printf("Waiting for %s order to be placed on %s", "SELL", ord.Symbol)
+
+	return nil
 }
 
 func (ord Order) exitBuyOrder(orderID string) error {
-	urp, _ := ord.GetUnRealisedProfit()
 
-	if urp < -700 { //400
-		err := ord.exit(orderID)
+	target1AlertTrigger := 0
+	negativeAlertTrigger := 0
+
+	for {
+		time.Sleep(500 * time.Millisecond)
+		urp, err := ord.GetUnRealisedProfit()
 		if err != nil {
-			return err
+			log.Printf("Error finding unrealised profit for %s. Error: %+v", ord.Symbol, err)
+			continue
+		}
+		if urp < ord.MaxLoss {
+			err := ord.exit(orderID)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+
+		if urp < 0 {
+			negativeAlertTrigger = negativeAlertTrigger + 1
+			if negativeAlertTrigger == 1 {
+				msg := fmt.Sprintf("PROFIT DROPPED TO NEGATIVE: \n Instrument:%s ", ord.Symbol)
+				alerts.SendAlerts(msg, alerts.TradeChannel)
+			}
+
+		} else {
+			negativeAlertTrigger = 0
+		}
+
+		ltp, err := ord.GetLastTradingPrice()
+		if err != nil {
+			log.Printf("Error finding last trad price for %s. Error: %+v", ord.Symbol, err)
+			continue
+		}
+		if ltp >= ord.BuyParams.Target1 {
+			target1AlertTrigger = target1AlertTrigger + 1
+			if target1AlertTrigger == 1 {
+				msg := fmt.Sprintf("Target1 Achieved: \n Instrument:%s ", ord.Symbol)
+				alerts.SendAlerts(msg, alerts.TradeChannel)
+			}
+		} else {
+			target1AlertTrigger = 0
+		}
+
+		if ltp >= ord.BuyParams.Target2 {
+			err := ord.exit(orderID)
+			if err != nil {
+				return err
+			}
+			return nil
 		}
 	}
-	ltp, _ := ord.GetLastTradingPrice()
-	if ltp >= ord.BuyParams.Target1 {
-		msg := fmt.Sprintf("Target1 Achieved: \n Instrument:%s ", ord.Symbol)
-		alerts.SendAlerts(msg, alerts.TradeChannel)
-		//update order to change trigger price
-	}
 
-	if ltp >= ord.BuyParams.Target2 {
-		err := ord.exit(orderID)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func (ord Order) exitSellOrder(orderID string) error {
-	urp, _ := ord.GetUnRealisedProfit()
+	target1AlertTrigger := 0
+	negativeAlertTrigger := 0
 
-	if urp < -700 { //400
-		err := ord.exit(orderID)
+	for {
+		time.Sleep(500 * time.Millisecond)
+		urp, err := ord.GetUnRealisedProfit()
 		if err != nil {
-			return err
+			log.Printf("Error finding unrealised profit for %s. Error: %+v", ord.Symbol, err)
+			continue
 		}
-		return nil
-	}
-	ltp, _ := ord.GetLastTradingPrice()
-	if ltp <= ord.SellParams.Target1 {
-		msg := fmt.Sprintf("Target1 Achieved: \n Instrument:%s", ord.Symbol)
-		alerts.SendAlerts(msg, alerts.TradeChannel)
-		//update order to change trigger price
-	}
+		if urp < ord.MaxLoss {
+			err := ord.exit(orderID)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
 
-	if ltp <= ord.SellParams.Target2 {
-		err := ord.exit(orderID)
+		if urp < 0 {
+			negativeAlertTrigger = negativeAlertTrigger + 1
+			if negativeAlertTrigger == 1 {
+				msg := fmt.Sprintf("PROFIT DROPPED TO NEGATIVE: \n Instrument:%s ", ord.Symbol)
+				alerts.SendAlerts(msg, alerts.TradeChannel)
+			}
+
+		} else {
+			negativeAlertTrigger = 0
+		}
+
+		ltp, err := ord.GetLastTradingPrice()
 		if err != nil {
-			return err
+			log.Printf("Error finding last trad price for %s. Error: %+v", ord.Symbol, err)
+			continue
 		}
-		return nil
-	}
+		if ltp <= ord.SellParams.Target1 {
+			target1AlertTrigger = target1AlertTrigger + 1
+			if target1AlertTrigger == 1 {
+				msg := fmt.Sprintf("Target1 Achieved: \n Instrument:%s ", ord.Symbol)
+				alerts.SendAlerts(msg, alerts.TradeChannel)
+			}
+		} else {
+			target1AlertTrigger = 0
+		}
 
-	return nil
+		if ltp <= ord.SellParams.Target2 {
+			err := ord.exit(orderID)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+
+	}
 }
 
 func (ord Order) exit(parentOrderID string) error {
@@ -389,11 +449,11 @@ func (ord Order) exit(parentOrderID string) error {
 		log.Printf("Error getting second Leg Order Id - %+v", err)
 		return err
 	}
-	log.Printf("Parent Order ID %+v", parentOrderID)
-	log.Printf("Second Leg Order ID %+v", secondLegOrderID)
+	// log.Printf("Parent Order ID %+v", parentOrderID)
+	// log.Printf("Second Leg Order ID %+v", secondLegOrderID)
 	_, err = ord.KC.ExitOrder(ord.Variety, secondLegOrderID, &parentOrderID)
 	if err != nil {
-		log.Printf("Error executing the order - %+v", err)
+		log.Printf("Error while exiting the order. Error: %+v", err)
 		return err
 	}
 

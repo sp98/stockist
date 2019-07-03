@@ -48,7 +48,7 @@ func (ord Order) GetUnRealisedProfit() (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	log.Printf("Positions : %+v\n", pos)
+	//log.Printf("Positions : %+v\n", pos)
 
 	for _, pos := range pos.Net {
 		if pos.InstrumentToken == getUnit32(ord.Token) {
