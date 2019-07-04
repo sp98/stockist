@@ -122,18 +122,18 @@ func (cs CandleStick) OpeningTrend() {
 	if openPrice < prevDayClose {
 		//Today's open is lower than previous day's Open
 		change := ((prevDayClose - openPrice) / prevDayClose) * 100
-		if change >= 1.5 {
-			msg := fmt.Sprintf("OPENING TRADE :: %s - %s - %s \nOpen: %.2f \nPrevious Close: %.2f \nChange: -%.2f%% \n%s", name, symbol, exchange, openPrice, prevDayClose, change, separation)
-			alerts.SendAlerts(msg, alerts.OpenTrendChannel)
-		}
+		// if change >= 1.5 {
+		msg := fmt.Sprintf("OPENING TRADE :: %s - %s - %s \nOpen: %.2f \nPrevious Close: %.2f \nChange: -%.2f%% \n%s", name, symbol, exchange, openPrice, prevDayClose, change, separation)
+		alerts.SendAlerts(msg, alerts.OpenTrendChannel)
+		// }
 
 	} else if openPrice > prevDayClose {
 		//Today's open is greater than previous day's open
 		change := ((openPrice - prevDayClose) / openPrice) * 100
-		if change >= 1.5 {
-			msg := fmt.Sprintf("OPENING TRADE :: %s - %s - %s \nOpen: %.2f \nPrevious Close: %.2f \nChange: +%.2f%% \n%s", name, symbol, exchange, openPrice, prevDayClose, change, separation)
-			alerts.SendAlerts(msg, alerts.OpenTrendChannel)
-		}
+		// if change >= 1.5 {
+		msg := fmt.Sprintf("OPENING TRADE :: %s - %s - %s \nOpen: %.2f \nPrevious Close: %.2f \nChange: +%.2f%% \n%s", name, symbol, exchange, openPrice, prevDayClose, change, separation)
+		alerts.SendAlerts(msg, alerts.OpenTrendChannel)
+		// }
 	}
 
 }
