@@ -168,7 +168,7 @@ func Start() {
 
 	c := make(chan string)
 
-	for i, order := range *orders {
+	for _, order := range *orders {
 		ord := &order
 
 		//Verify if the order is already created
@@ -188,10 +188,10 @@ func Start() {
 
 			} else {
 				log.Printf("Position already created and no pending BO orders are available for Stock - %s", ord.Symbol)
-				if i == len(*orders)-1 {
-					return //becuase no more orders are there to execute
-				}
-				continue
+				// if i == len(*orders)-1 {
+				// 	return //becuase no more orders are there to execute
+				// }
+				// continue
 			}
 		}
 
@@ -333,6 +333,7 @@ func (ord *Order) exitOrder(orderID string) error {
 func (ord Order) exitBuyOrder(orderID string) error {
 
 	target1AlertTrigger := 0
+	target2AlertTrigger := 0
 	negativeAlertTrigger := 0
 
 	for {
@@ -377,12 +378,17 @@ func (ord Order) exitBuyOrder(orderID string) error {
 		}
 
 		if ltp >= ord.BuyParams.Target2 {
-			err := ord.exit(orderID)
-			if err != nil {
-				return err
+
+			target2AlertTrigger = target2AlertTrigger + 1
+			if target2AlertTrigger == 1 {
+				msg := fmt.Sprintf("Target1 Achieved: \n Instrument:%s ", ord.Symbol)
+				alerts.SendAlerts(msg, alerts.TradeChannel)
 			}
-			return nil
+		} else {
+			target2AlertTrigger = 0
 		}
+
+		return nil
 	}
 
 }
@@ -390,6 +396,7 @@ func (ord Order) exitBuyOrder(orderID string) error {
 func (ord Order) exitSellOrder(orderID string) error {
 	target1AlertTrigger := 0
 	negativeAlertTrigger := 0
+	target2AlertTrigger := 0
 
 	for {
 		time.Sleep(500 * time.Millisecond)
@@ -433,11 +440,13 @@ func (ord Order) exitSellOrder(orderID string) error {
 		}
 
 		if ltp <= ord.SellParams.Target2 {
-			err := ord.exit(orderID)
-			if err != nil {
-				return err
+			target2AlertTrigger = target2AlertTrigger + 1
+			if target2AlertTrigger == 1 {
+				msg := fmt.Sprintf("Target1 Achieved: \n Instrument:%s ", ord.Symbol)
+				alerts.SendAlerts(msg, alerts.TradeChannel)
 			}
-			return nil
+		} else {
+			target2AlertTrigger = 0
 		}
 
 	}
