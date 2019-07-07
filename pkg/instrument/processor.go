@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	kiteconnect "github.com/sp98/gokiteconnect"
 	"github.com/stockist/pkg/kite"
 	"github.com/stockist/pkg/storage"
 )
@@ -48,8 +49,10 @@ func StartProcessing() {
 	}
 
 	// Analyse the aggregated tick results
+	kc := getConnection()
 	for _, instrument := range *instruments {
 		cs := &CandleStick{
+			KC:         kc,
 			Instrument: instrument,
 		}
 		go cs.startAnalysis()
@@ -100,4 +103,10 @@ func closeTrade() (time.Duration, error) {
 		return 0, err
 	}
 	return closeTime.Sub(parsedCurrentTime), nil
+}
+
+func getConnection() *kiteconnect.Client {
+	kc := kiteconnect.New(apiKey)
+	kc.SetAccessToken(accessToken)
+	return kc
 }

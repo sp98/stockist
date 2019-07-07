@@ -11,6 +11,7 @@ const (
 	ShortSellStocksChannel = "#short-sell"
 	TradeChannel           = "#trade"
 	ErrorChannel           = "#errors"
+	OpenLowHigh            = "#open-low-high"
 )
 
 //OpeningTrade attachment format
@@ -72,6 +73,8 @@ func getWebhook(channel string) string {
 		webhookURL = "https://hooks.slack.com/services/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"
 	} else if channel == ErrorChannel {
 		webhookURL = "https://hooks.slack.com/services/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"
+	} else if channel == OpenLowHigh {
+		webhookURL = "https://hooks.slack.com/services/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"
 	}
 
 	return webhookURL

@@ -42,6 +42,18 @@ func (ord Order) GetLastTradingPrice() (float64, error) {
 
 }
 
+//GetOHLC return open high low and close for the stock
+func (ord Order) GetOHLC() (float64, float64, float64, error) {
+	ohlc, err := ord.KC.GetOHLC(ord.Token)
+	if err != nil {
+		log.Println("Error finding OHLC : ", err)
+		return 0, 0, 0, err
+	}
+	// log.Printf("OHCL %+v", ohlc)
+	return ohlc[ord.Token].OHLC.Open, ohlc[ord.Token].OHLC.High, ohlc[ord.Token].OHLC.Low, nil
+
+}
+
 //GetUnRealisedProfit returns unrealised profit and loss for the isntrument.
 func (ord Order) GetUnRealisedProfit() (float64, error) {
 	pos, err := ord.KC.GetPositions()

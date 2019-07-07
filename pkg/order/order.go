@@ -15,18 +15,16 @@ const (
 
 //Order struct
 type Order struct {
-	KC            *kiteconnect.Client //Kite Trading Client
-	Variety       string
-	Token         string //Instruement token
-	Symbol        string
-	Exchange      string
-	PreviousClose float64
-	OpenPrice     float64
-	Status        string
-	OrderID       string
-	BuyParams     *BuyParams
-	SellParams    *SellParams
-	MaxLoss       float64
+	KC         *kiteconnect.Client //Kite Trading Client
+	Variety    string
+	Token      string //Instruement token
+	Symbol     string
+	Exchange   string
+	Status     string
+	OrderID    string
+	BuyParams  *BuyParams
+	SellParams *SellParams
+	MaxLoss    float64
 }
 
 //BuyParams are parameters when buying a stock
@@ -65,24 +63,24 @@ func New() *[]Order {
 	sParams := &SellParams{}
 
 	for _, order := range BuyOrders {
-		var bsl float64
-		var bso float64
-		var ssl float64
-		var sso float64
+		// var bsl float64
+		// var bso float64
+		// var ssl float64
+		// var sso float64
 
-		bsl = order.BuyPrice - order.BuyStopLoss
-		if order.BuyTarget2 != 0 {
-			bso = order.BuyTarget2 - order.BuyPrice
-		} else {
-			bso = order.BuyTarget1 - order.BuyPrice
-		}
+		//bsl = order.BuyPrice - order.BuyStopLoss
+		// if order.BuyTarget2 != 0 {
+		// 	bso = order.BuyTarget2 - order.BuyPrice
+		// } else {
+		// 	bso = order.BuyTarget1 - order.BuyPrice
+		// }
 
-		ssl = order.SellStopLoss - order.SellPrice
-		if order.SellTarget2 != 0 {
-			sso = order.SellPrice - order.SellTarget2
-		} else {
-			sso = order.SellPrice - order.SellTarget1
-		}
+		// ssl = order.SellStopLoss - order.SellPrice
+		// if order.SellTarget2 != 0 {
+		// 	sso = order.SellPrice - order.SellTarget2
+		// } else {
+		// 	sso = order.SellPrice - order.SellTarget1
+		// }
 
 		if order.BuyPrice == 0 {
 			bParams = nil
@@ -98,8 +96,8 @@ func New() *[]Order {
 						OrderType:       order.OrderType,
 						Price:           order.BuyPrice,
 						TransactionType: "BUY",
-						Stoploss:        float64(bsl),
-						Squareoff:       float64(bso),
+						Stoploss:        order.BuyStopLoss,
+						Squareoff:       order.BuyTarget2,
 						Quantity:        order.Quantity,
 						Validity:        order.Validity,
 					},
@@ -120,8 +118,8 @@ func New() *[]Order {
 					OrderType:       order.OrderType,
 					Price:           order.SellPrice,
 					TransactionType: "SELL",
-					Stoploss:        float64(ssl),
-					Squareoff:       float64(sso),
+					Stoploss:        order.SellStopLoss,
+					Squareoff:       order.SellTarget2,
 					Quantity:        order.Quantity,
 					Validity:        order.Validity,
 				},
@@ -161,7 +159,7 @@ func Start() {
 	// 	log.Printf("Order Buy Param %+v", ord.BuyParams)
 	// 	log.Printf("Order Buy Order Params %+v", ord.BuyParams.Params)
 	// 	log.Printf("Order Sell Param %+v", ord.SellParams)
-	// 	// log.Printf("Order Sell Order Param %+v", ord.SellParams.Params)
+	// 	log.Printf("Order Sell Order Param %+v", ord.SellParams.Params)
 	// 	log.Println("*************************")
 	// }
 	//panic(1)
@@ -207,20 +205,6 @@ func Start() {
 
 func (ord Order) execute(c chan string) {
 	var orderID string
-	prevClose, err := ord.GetClosePrice()
-	if err != nil {
-		log.Printf("Error finding Previous day close Price for the Instrument : %+v", ord.Symbol)
-	}
-
-	ord.PreviousClose = prevClose
-	openPrice, err := ord.GetOpenPrice()
-
-	if err != nil {
-		log.Printf("Error finding Opening Price for the Instrument : %+v", ord.Symbol)
-	}
-
-	ord.OpenPrice = openPrice
-
 	//If Position is already created for this Stock, then skip placing new order.
 	if ord.Status == "BOUGHT" || ord.Status == "SOLD" {
 		orderID = ord.OrderID
@@ -262,7 +246,7 @@ func (ord Order) execute(c chan string) {
 
 	ord.notfiyOrderCompletion(orderID)
 
-	err = ord.exitOrder(orderID)
+	err := ord.exitOrder(orderID)
 	if err != nil {
 		msg := fmt.Sprintf("Order Exit Failed")
 		alerts.SendAlerts(msg, alerts.ErrorChannel)
@@ -276,33 +260,63 @@ func (ord *Order) placeOrder() (*kiteconnect.OrderResponse, error) {
 
 	for {
 		time.Sleep(500 * time.Millisecond)
+		open, high, low, err := ord.GetOHLC()
+		if err != nil {
+			log.Println("Error finding OHLC for : ", ord.Symbol)
+			continue
+		}
 		ltp, err := ord.GetLastTradingPrice()
 		if err != nil {
 			log.Println("Error finding LTP for : ", ord.Symbol)
 			continue
 		}
 
-		//log.Println("LTP Price : ", ltp)
 		if ord.BuyParams != nil {
-			if ord.OpenPrice < ord.BuyParams.Params.Price && ltp > ord.BuyParams.Params.Price {
+			if ltp > open && ltp >= ord.BuyParams.Params.Price {
+				ord.BuyParams.Params.TrailingStoploss = 1
+				if open == low {
+					ord.BuyParams.Params.Squareoff = ord.BuyParams.Params.Squareoff + 10
+					orderResp, err := ord.ExecuteOrder("BUY")
+					ord.Status = "BOUGHT"
+					if err != nil {
+						return nil, err
+					}
+
+					return orderResp, nil
+				}
+				//When Open != low
+				ord.BuyParams.Params.Stoploss = 5
 				orderResp, err := ord.ExecuteOrder("BUY")
 				ord.Status = "BOUGHT"
 				if err != nil {
 					return nil, err
 				}
-
 				return orderResp, nil
+
 			}
+
 		}
 
 		if ord.SellParams != nil {
-			if ord.OpenPrice > ord.SellParams.Params.Price && ltp < ord.SellParams.Params.Price {
+			if ltp < open && ltp <= ord.SellParams.Params.Price {
+				ord.SellParams.Params.TrailingStoploss = 1
+				if open == high {
+					ord.SellParams.Params.Squareoff = ord.SellParams.Params.Squareoff + 10
+					orderResp, err := ord.ExecuteOrder("SELL")
+					if err != nil {
+						return nil, err
+					}
+					ord.Status = "SOLD"
+					return orderResp, nil
+				}
+				ord.SellParams.Params.Stoploss = 5
 				orderResp, err := ord.ExecuteOrder("SELL")
 				if err != nil {
 					return nil, err
 				}
 				ord.Status = "SOLD"
 				return orderResp, nil
+
 			}
 
 		}
@@ -325,30 +339,53 @@ func (ord *Order) exitOrder(orderID string) error {
 		return ord.exitSellOrder(orderID)
 	}
 
-	log.Printf("Waiting for %s order to be placed on %s", "SELL", ord.Symbol)
-
 	return nil
 }
 
 func (ord Order) exitBuyOrder(orderID string) error {
 
+	target1 := ord.BuyParams.Params.Price + ord.BuyParams.Target1
+	target2 := ord.BuyParams.Params.Price + ord.BuyParams.Target1
 	target1AlertTrigger := 0
 	target2AlertTrigger := 0
 	negativeAlertTrigger := 0
 
 	for {
 		time.Sleep(500 * time.Millisecond)
+
+		ltp, err := ord.GetLastTradingPrice()
+		if err != nil {
+			log.Printf("Error finding last trad price for %s. Error: %+v", ord.Symbol, err)
+			continue
+		}
+
+		//Check if target1 is achieved
+		if ltp >= target1 {
+			target1AlertTrigger = target1AlertTrigger + 1
+			if target1AlertTrigger == 1 {
+				msg := fmt.Sprintf("Target1 Achieved: \nInstrument:%s \nAdjust Stop loss accordingly", ord.Symbol)
+				alerts.SendAlerts(msg, alerts.TradeChannel)
+			}
+		} else {
+			target1AlertTrigger = 0
+		}
+
+		//Check if target2 is achieved
+		if ltp >= target2 {
+			target2AlertTrigger = target2AlertTrigger + 1
+			if target2AlertTrigger == 1 {
+				msg := fmt.Sprintf("Target1 Achieved: \nInstrument:%s \nAdjust Stop loss accordingly", ord.Symbol)
+				alerts.SendAlerts(msg, alerts.TradeChannel)
+			}
+		} else {
+			target2AlertTrigger = 0
+		}
+
+		//Check status of urealized profit
 		urp, err := ord.GetUnRealisedProfit()
 		if err != nil {
 			log.Printf("Error finding unrealised profit for %s. Error: %+v", ord.Symbol, err)
 			continue
-		}
-		if urp < ord.MaxLoss {
-			err := ord.exit(orderID)
-			if err != nil {
-				return err
-			}
-			return nil
 		}
 
 		if urp < 0 {
@@ -357,61 +394,76 @@ func (ord Order) exitBuyOrder(orderID string) error {
 				msg := fmt.Sprintf("PROFIT DROPPED TO NEGATIVE: \n Instrument:%s ", ord.Symbol)
 				alerts.SendAlerts(msg, alerts.TradeChannel)
 			}
-
 		} else {
 			negativeAlertTrigger = 0
 		}
 
-		ltp, err := ord.GetLastTradingPrice()
-		if err != nil {
-			log.Printf("Error finding last trad price for %s. Error: %+v", ord.Symbol, err)
-			continue
-		}
-		if ltp >= ord.BuyParams.Target1 {
-			target1AlertTrigger = target1AlertTrigger + 1
-			if target1AlertTrigger == 1 {
-				msg := fmt.Sprintf("Target1 Achieved: \n Instrument:%s ", ord.Symbol)
-				alerts.SendAlerts(msg, alerts.TradeChannel)
-			}
-		} else {
-			target1AlertTrigger = 0
-		}
+		// if urp < ord.MaxLoss {
+		// 	err := ord.exit(orderID)
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		// 	return nil
+		// }
 
-		if ltp >= ord.BuyParams.Target2 {
+		// return nil
 
-			target2AlertTrigger = target2AlertTrigger + 1
-			if target2AlertTrigger == 1 {
-				msg := fmt.Sprintf("Target1 Achieved: \n Instrument:%s ", ord.Symbol)
-				alerts.SendAlerts(msg, alerts.TradeChannel)
-			}
-		} else {
-			target2AlertTrigger = 0
-		}
-
-		return nil
+		log.Printf("Waiting for %s order to be placed on %s", "SELL", ord.Symbol)
 	}
 
 }
 
 func (ord Order) exitSellOrder(orderID string) error {
+	target1 := ord.SellParams.Params.Price - ord.SellParams.Target1
+	target2 := ord.SellParams.Params.Price - ord.SellParams.Target2
 	target1AlertTrigger := 0
 	negativeAlertTrigger := 0
 	target2AlertTrigger := 0
 
 	for {
 		time.Sleep(500 * time.Millisecond)
+
+		ltp, err := ord.GetLastTradingPrice()
+		if err != nil {
+			log.Printf("Error finding last trad price for %s. Error: %+v", ord.Symbol, err)
+			continue
+		}
+
+		//Check if target1 is achieved
+		if ltp <= target1 {
+			target1AlertTrigger = target1AlertTrigger + 1
+			if target1AlertTrigger == 1 {
+				msg := fmt.Sprintf("Target1 Achieved: \n Instrument:%s ", ord.Symbol)
+				alerts.SendAlerts(msg, alerts.TradeChannel)
+			}
+		} else {
+			target1AlertTrigger = 0
+		}
+
+		//Check if target2 is achieved
+		if ltp <= target2 {
+			target2AlertTrigger = target2AlertTrigger + 1
+			if target2AlertTrigger == 1 {
+				msg := fmt.Sprintf("Target1 Achieved: \n Instrument:%s ", ord.Symbol)
+				alerts.SendAlerts(msg, alerts.TradeChannel)
+			}
+		} else {
+			target2AlertTrigger = 0
+		}
+
+		//Check status of urealized profit
 		urp, err := ord.GetUnRealisedProfit()
 		if err != nil {
 			log.Printf("Error finding unrealised profit for %s. Error: %+v", ord.Symbol, err)
 			continue
 		}
-		if urp < ord.MaxLoss {
-			err := ord.exit(orderID)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
+		// if urp < ord.MaxLoss {
+		// 	err := ord.exit(orderID)
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		// 	return nil
+		// }
 
 		if urp < 0 {
 			negativeAlertTrigger = negativeAlertTrigger + 1
@@ -422,31 +474,6 @@ func (ord Order) exitSellOrder(orderID string) error {
 
 		} else {
 			negativeAlertTrigger = 0
-		}
-
-		ltp, err := ord.GetLastTradingPrice()
-		if err != nil {
-			log.Printf("Error finding last trad price for %s. Error: %+v", ord.Symbol, err)
-			continue
-		}
-		if ltp <= ord.SellParams.Target1 {
-			target1AlertTrigger = target1AlertTrigger + 1
-			if target1AlertTrigger == 1 {
-				msg := fmt.Sprintf("Target1 Achieved: \n Instrument:%s ", ord.Symbol)
-				alerts.SendAlerts(msg, alerts.TradeChannel)
-			}
-		} else {
-			target1AlertTrigger = 0
-		}
-
-		if ltp <= ord.SellParams.Target2 {
-			target2AlertTrigger = target2AlertTrigger + 1
-			if target2AlertTrigger == 1 {
-				msg := fmt.Sprintf("Target1 Achieved: \n Instrument:%s ", ord.Symbol)
-				alerts.SendAlerts(msg, alerts.TradeChannel)
-			}
-		} else {
-			target2AlertTrigger = 0
 		}
 
 	}

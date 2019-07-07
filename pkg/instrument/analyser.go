@@ -6,11 +6,13 @@ import (
 	"strconv"
 	"time"
 
+	kiteconnect "github.com/sp98/gokiteconnect"
 	"github.com/stockist/pkg/storage"
 )
 
 //CandleStick holds the currently trading order details
 type CandleStick struct {
+	KC            *kiteconnect.Client //Kite Trading Client
 	Instrument    Instrument
 	Details       []CandleStickList
 	PreviousTrade string
@@ -95,7 +97,7 @@ func (cs *CandleStick) Analyse() {
 
 	} else if len(cs.Details) == 3 {
 		//log.Println("Checking opening Trend")
-		cs.OpeningTrend()
+		cs.OpenLowHigh()
 	}
 }
 
