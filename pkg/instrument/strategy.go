@@ -3,6 +3,7 @@ package instrument
 import (
 	"fmt"
 	"log"
+	"time"
 
 	alerts "github.com/stockist/pkg/notification"
 	"github.com/stockist/pkg/storage"
@@ -109,6 +110,7 @@ func (cs CandleStick) OpenLowHigh() {
 		return
 	}
 
+	time.Sleep(1000 * time.Millisecond)
 	open, high, low, err := cs.GetOHLC()
 	if err != nil {
 		log.Println("Error Finding OHLC for :", cs.Instrument.Symbol)
