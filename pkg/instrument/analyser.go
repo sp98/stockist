@@ -92,12 +92,12 @@ func (cs *CandleStick) Analyse() {
 		if cs.Instrument.Name == "SENSEX" {
 			cs.AnalyseSensex()
 		} else {
-			cs.PriceAction()
+			cs.OpenLowHigh()
 		}
 
 	} else if len(cs.Details) == 3 {
 		//log.Println("Checking opening Trend")
-		cs.OpenLowHigh()
+		cs.OpeningTrend()
 	}
 }
 
