@@ -10,6 +10,9 @@ import (
 	"github.com/stockist/pkg/storage"
 )
 
+//StopAnalysis signals stopping the analysis for  stock
+const StopAnalysis = "STOPANALYSIS"
+
 //CandleStick holds the currently trading order details
 type CandleStick struct {
 	KC            *kiteconnect.Client //Kite Trading Client
@@ -35,16 +38,6 @@ func (cs *CandleStick) startAnalysis() error {
 		//return error here
 	}
 
-	// mct, err := parseTime(layOut, fmt.Sprintf(marketCloseTime, getDate()))
-	// if err != nil {
-	// 	return err
-	// }
-
-	// if stop, _ := cs.stopAnalysis(mct, false); stop {
-	// 	log.Printf("Can't start analysis. Already past market closing time %+v", mct)
-	// 	return nil
-	// }
-
 	wt := waitBeforeAnalysis(interval)
 	if wt > 0 {
 		log.Printf("Wait for %.2f minutes before starting", float64(wt)/60)
@@ -57,48 +50,55 @@ func (cs *CandleStick) startAnalysis() error {
 	log.Printf("Analysis Start Time: %+v ::: Analysis Stop Time: %+v", time.Now(), fmt.Sprintf(marketCloseTime, getDate()))
 
 	for alive := true; alive; {
-		// res, _ := cs.stopAnalysis(mct, true)
-		// if res {
-		// 	cT, _ := parseTime(layOut, time.Now().Format(tstringFormat))
-		// 	log.Printf("Stopping Analysis for Today at %+v", cT)
-
-		// 	alive = false
-		// 	t.Stop()
-		// 	break
-		// }
 		stamp := <-t.C
 		log.Printf("Starting Analysis at %+v", stamp.Format(tstringFormat))
 		// do actual analysis here
 		time.Sleep(time.Second * 3) //Adding a wait for the continuous query to run
-		cs.Analyse()
+		status := cs.Analyse()
+		//Stop Analysis
+		if status == StopAnalysis {
+			log.Printf("Stopping analysis for instrument %s as its invalid for Open low High strategy", cs.Instrument.Symbol)
+			return nil
+		}
+
 	}
 	return nil
 }
 
 //Analyse the trade
-func (cs *CandleStick) Analyse() {
+func (cs *CandleStick) Analyse() string {
 
 	csList := cs.getTicks()
 	//log.Printf("Aggregate results - %+v", csList)
 
 	if len(*csList) == 0 {
 		log.Println("Error: Candle Stick details are empty!")
-		return
+		return ""
 	}
 	cs.Details = *csList
 	cs.PreviousTrade = getLastTrade(cs.Instrument.Token) //TODO: Does not work with short sell scenario!
 
-	if len(cs.Details) > 4 {
+	if len(cs.Details) > 4 { //Statring analysis after 9:15 am
 		if cs.Instrument.Name == "SENSEX" {
 			cs.AnalyseSensex()
 		} else {
-			cs.OpenLowHigh()
+			status, _ := cs.OpenLowHigh()
+			return status
 		}
 
-	} else if len(cs.Details) == 3 {
+	} else if len(cs.Details) == 3 { //Get Opening trend at 9:10 am
 		//log.Println("Checking opening Trend")
 		cs.OpeningTrend()
 	}
+
+	//Send Profit alerts for orders placed after 9:45 am
+	if len(cs.Details) >= 9 {
+		if cs.Instrument.Name != "SENSEX" {
+			cs.SendProfitAlerts()
+		}
+	}
+
+	return ""
 }
 
 func (cs *CandleStick) getTicks() *[]CandleStickList {

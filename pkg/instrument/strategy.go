@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	kiteticker "github.com/sp98/gokiteconnect/ticker"
 	alerts "github.com/stockist/pkg/notification"
 	"github.com/stockist/pkg/storage"
 )
@@ -86,46 +87,41 @@ func (cs CandleStick) PriceAction() {
 }
 
 //OpenLowHigh strategy for stock recommendation
-func (cs CandleStick) OpenLowHigh() {
-
-	/*
-		1. BUY:
-		- OPEN == LOW
-		- SENSEX is in upwardtrend
-		- Watch out for suggestions between 10 am to 11 am
-
-		2. SELL:
-		- OPEN == HIGH
-		- SENSEX is in downtrend
-		- Watchout for suggestions around 10 am to 11 am
-	*/
+func (cs CandleStick) OpenLowHigh() (string, error) {
 
 	if len(cs.Details) < 9 {
 		log.Println("No Open Low High recommendations before 9:45 am")
-		return
+		return "", nil
 	}
 
 	if cs.KC == nil {
 		log.Println("Error: Kite connection is nil")
-		return
+		return "", nil
 	}
 
-	time.Sleep(1000 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond) //wait to avoid to many request error
 	open, high, low, err := cs.GetOHLC()
 	if err != nil {
-		log.Println("Error Finding OHLC for :", cs.Instrument.Symbol)
-		return
+		log.Printf("Error Finding OHLC for %s. Error : %+v", cs.Instrument.Symbol, err)
+		return "", err
 	}
 
-	if len(cs.Details) == 9 {
+	//Send alert about Open=High and Open=Low stocks. Unsubscribe and stop analysis of the stocks that don't follow Open High Low
+	if len(cs.Details) == 9 { //Open == high is a good canditate to short cell in case of negative markets.
 		if open == high {
-			msg := fmt.Sprintf("Possible Short Sell Stock \nInstrument: %s \n Open: %2.f \nHigh: %2.f", cs.Instrument.Symbol, open, high)
+			msg := fmt.Sprintf("Possible Short Sell Stock \nInstrument: %s \n Open: %.2f \nHigh: %.2f", cs.Instrument.Symbol, open, high)
 			alerts.SendAlerts(msg, alerts.OpenLowHigh)
-			//Open == high is a good canditate to short cell in case of negative markets.
-		} else if open == low {
-			//Open == low is a good canditate to buy in case of positive markets.
-			msg := fmt.Sprintf("Possible Buy Stock \nInstrument: %s \n Open: %2.f \nLow: %2.f", cs.Instrument.Symbol, open, low)
+		} else if open == low { //Open == low is a good canditate to buy in case of positive markets.
+			msg := fmt.Sprintf("Possible Buy Stock \nInstrument: %s \n Open: %.2f \nLow: %.2f", cs.Instrument.Symbol, open, low)
 			alerts.SendAlerts(msg, alerts.OpenLowHigh)
+		} else {
+			err := cs.UnSubcribe()
+			if err != nil {
+				msg := fmt.Sprintf("Error unsubscribing stock %s", cs.Instrument.Symbol)
+				log.Println(msg)
+				alerts.SendAlerts(msg, alerts.ErrorChannel)
+			}
+			return StopAnalysis, nil
 		}
 	}
 
@@ -133,12 +129,6 @@ func (cs CandleStick) OpenLowHigh() {
 	log.Printf("Previous Trade: %v", cs.PreviousTrade)
 
 	prevDayTrend, prevDayChange := getPreviousDayTrend(cs.Details[len(cs.Details)-1].Open, cs.Details[len(cs.Details)-1].Close)
-	// previousDayLow := cs.Details[len(cs.Details)-1].Low
-	// lowestToday, _ := getLowestLow(cs.Details[:len(cs.Details)-1])
-	// log.Printf("Previous Day Low: %v", previousDayLow)
-	// log.Printf("Today's Lowest so far: %v", lowestToday)
-	// previousDayHigh := cs.Details[len(cs.Details)-1].High
-	// highestToday, _ := getHighestHigh(cs.Details[:len(cs.Details)-1])
 	isBull, bullCount := isBullish(cs.Details)
 	isBear, bearCount := isBearish(cs.Details)
 
@@ -155,40 +145,60 @@ func (cs CandleStick) OpenLowHigh() {
 	lhePattern := lowerHighsEngulfingPatternCount(cs.Details)
 
 	if cs.PreviousTrade == "SOLD" || len(cs.PreviousTrade) == 0 {
-		if bearishHammer || bullishHammer || bullishMaru || isDozi || (isBull && !invertedHammer) {
-			if (shortTrend == "decline" && shortTrendCount >= 3) || (bearTrendCount >= 3 || bearCount >= 3) || lhePattern >= 5 {
-				if open == low {
-					//&& lowestToday > previousDayLow
-					log.Printf("BUY %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
-					log.Printf("Previous Trade: %v :: Bearish Hammer: %v :: bullishHammer: %v :: isBull: %v :: BullishMaru:: %v :: isDozi: %v", cs.PreviousTrade, bearishHammer, bullishHammer, isBull, bullishMaru, isDozi)
-					log.Printf("shortTrend: %v :: shortTrendCount: %v :: bearTrendCount: %v :: bearCount: %v :: lhePattern:: %v", shortTrend, shortTrendCount, bearTrendCount, bearCount, lhePattern)
-					msg := fmt.Sprintf("BUY CALL ::  %s - %s - %s\nPrevious Day Trend: %s \nPrevious Day Change: %s \nMESSAGE : %s \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, prevDayTrend, prevDayChange, "Ensure that market is moving up", separation)
-					alerts.SendAlerts(msg, alerts.BuyStockChannel)
-				}
-			}
 
-		}
-
-		if len(cs.PreviousTrade) == 0 {
-			if invertedHammer || bearishMaru || isDozi || isBear {
-				if (shortTrend == "rally" && shortTrendCount >= 3) || (bullTrendCount >= 3 || bullCount >= 3) || hhePattern >= 5 {
-					if open == high {
-						log.Printf("SHORT SELL CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
-						log.Printf("Previous Trade: %v :: isBear: %v :: bearishMaru:  %v :: isDozi: %v", cs.PreviousTrade, isBear, bearishMaru, isDozi)
-						log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
-						msg := fmt.Sprintf("SHORT SELL CALL :: %s - %s - %s \nPrevious Day Trend: %s \nPrevious Day Change: %s \nMESSAGE: %s  \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, prevDayTrend, prevDayChange, "Ensure that market is falling down", separation)
-						alerts.SendAlerts(msg, alerts.ShortSellStocksChannel)
-
+		if open == low { // Buy Call in Uptrend Market
+			if bearishHammer || bullishHammer || bullishMaru || isDozi || (isBull && !invertedHammer) {
+				if len(cs.Details) <= 18 { //Giving suggestions before 10:30 am
+					if (shortTrend == "decline" && shortTrendCount >= 2) || (bearTrendCount >= 2 || bearCount >= 2) || lhePattern >= 3 {
+						log.Printf("BUY %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
+						log.Printf("Previous Trade: %v :: Bearish Hammer: %v :: bullishHammer: %v :: isBull: %v :: BullishMaru:: %v :: isDozi: %v", cs.PreviousTrade, bearishHammer, bullishHammer, isBull, bullishMaru, isDozi)
+						log.Printf("shortTrend: %v :: shortTrendCount: %v :: bearTrendCount: %v :: bearCount: %v :: lhePattern:: %v", shortTrend, shortTrendCount, bearTrendCount, bearCount, lhePattern)
+						msg := fmt.Sprintf("BUY CALL ::  %s - %s - %s\nPrevious Day Trend: %s \nPrevious Day Change: %s \nMESSAGE : %s \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, prevDayTrend, prevDayChange, "Ensure that market is moving up", separation)
+						alerts.SendAlerts(msg, alerts.BuyStockChannel)
+					}
+				} else {
+					if (shortTrend == "decline" && shortTrendCount >= 4) || (bearTrendCount >= 4 || bearCount >= 4) || lhePattern >= 5 {
+						log.Printf("BUY %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
+						log.Printf("Previous Trade: %v :: Bearish Hammer: %v :: bullishHammer: %v :: isBull: %v :: BullishMaru:: %v :: isDozi: %v", cs.PreviousTrade, bearishHammer, bullishHammer, isBull, bullishMaru, isDozi)
+						log.Printf("shortTrend: %v :: shortTrendCount: %v :: bearTrendCount: %v :: bearCount: %v :: lhePattern:: %v", shortTrend, shortTrendCount, bearTrendCount, bearCount, lhePattern)
+						msg := fmt.Sprintf("BUY CALL ::  %s - %s - %s\nPrevious Day Trend: %s \nPrevious Day Change: %s \nMESSAGE : %s \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, prevDayTrend, prevDayChange, "Ensure that market is moving up", separation)
+						alerts.SendAlerts(msg, alerts.BuyStockChannel)
 					}
 				}
 
 			}
+		}
 
+		if open == high { // SHORT SELL Call in Downtrend Market
+			if len(cs.PreviousTrade) == 0 {
+				if invertedHammer || bearishMaru || isDozi || isBear {
+					if len(cs.Details) <= 18 {
+						if (shortTrend == "rally" && shortTrendCount >= 2) || (bullTrendCount >= 2 || bullCount >= 2) || hhePattern >= 4 {
+							log.Printf("SHORT SELL CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
+							log.Printf("Previous Trade: %v :: isBear: %v :: bearishMaru:  %v :: isDozi: %v", cs.PreviousTrade, isBear, bearishMaru, isDozi)
+							log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
+							msg := fmt.Sprintf("SHORT SELL CALL :: %s - %s - %s \nPrevious Day Trend: %s \nPrevious Day Change: %s \nMESSAGE: %s  \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, prevDayTrend, prevDayChange, "Ensure that market is falling down", separation)
+							alerts.SendAlerts(msg, alerts.ShortSellStocksChannel)
+
+						} else {
+							if (shortTrend == "rally" && shortTrendCount >= 4) || (bullTrendCount >= 4 || bullCount >= 4) || hhePattern >= 4 {
+								log.Printf("SHORT SELL CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
+								log.Printf("Previous Trade: %v :: isBear: %v :: bearishMaru:  %v :: isDozi: %v", cs.PreviousTrade, isBear, bearishMaru, isDozi)
+								log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
+								msg := fmt.Sprintf("SHORT SELL CALL :: %s - %s - %s \nPrevious Day Trend: %s \nPrevious Day Change: %s \nMESSAGE: %s  \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, prevDayTrend, prevDayChange, "Ensure that market is falling down", separation)
+								alerts.SendAlerts(msg, alerts.ShortSellStocksChannel)
+
+							}
+						}
+					}
+				}
+
+			}
 		}
 
 	} else if cs.PreviousTrade == "BOUGHT" {
 		if isBear || bearishMaru || isDozi {
-			if (shortTrend == "rally" && shortTrendCount >= 2) || (bullTrendCount >= 2 || bullCount >= 2) {
+			if (shortTrend == "rally" && shortTrendCount >= 4) || (bullTrendCount >= 4 || bullCount >= 4) {
 				log.Printf("SELL CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
 				log.Printf("Previous Trade: %v :: isBear: %v :: bearishMaru:  %v :: isDozi: %v", cs.PreviousTrade, isBear, bearishMaru, isDozi)
 				log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
@@ -200,6 +210,8 @@ func (cs CandleStick) OpenLowHigh() {
 	}
 
 	log.Println("-----------------------------------------------------------------------------------------------------------------------")
+
+	return "", nil
 
 }
 
@@ -223,20 +235,7 @@ func (cs CandleStick) OpeningTrend() {
 		return
 	}
 
-	//prevDayLow := cs.Details[len(cs.Details)-1].Low
-	//prevDayHigh := cs.Details[len(cs.Details)-1].High
 	prevDayClose := cs.Details[len(cs.Details)-1].Close
-	//prevDayOpen := cs.Details[len(cs.Details)-1].Open
-
-	// if openPrice < prevDayLow {
-	// 	//Today's open is lower than previous day's low
-	// 	change := ((prevDayLow - openPrice) / prevDayLow) * 100
-	// 	SendAlerts(fmt.Sprintf("OPENING TRADE :: %s - %s - %s \nOpen: %.2f \nPrevious Low: %.2f \nChange: -%.2f%% \n%s", name, symbol, exchange, openPrice, prevDayLow, change, separation))
-	// }else if openPrice >= prevDayHigh {
-	// 	change := ((openPrice - prevDayHigh) / openPrice) * 100
-	// 	//Today's open is lower than previous day's High
-	// 	SendAlerts(fmt.Sprintf("OPENING TRADE :: %s - %s - %s \nOpen: %.2f \nPrevious High: %.2f \nChange: +%.2f%% \n%s", name, symbol, exchange, openPrice, prevDayHigh, change, separation))
-	// }
 
 	if openPrice < prevDayClose {
 		//Today's open is lower than previous day's Open
@@ -351,20 +350,45 @@ func (cs CandleStick) GetOHLC() (float64, float64, float64, error) {
 
 }
 
-//Logs
+//UnSubcribe a stock to stop getting ticks
+func (cs CandleStick) UnSubcribe() error {
+	var us []uint32
+	us = append(us, getUnit32(cs.Instrument.Token))
+	ticker := kiteticker.New(apiKey, accessToken)
+	return ticker.Unsubscribe(us)
+}
 
-// log.Printf("isBull - %v", isBull)
-// log.Printf("isBear - %v", isBear)
-// log.Printf("bearCount - %v", bearCount)
-// log.Printf("Dozi - %v", isDozi)
-// log.Printf("bullishMaru - %v", bullishMaru)
-// log.Printf("bearishMaru - %v", bearishMaru)
-// log.Printf("bullishHammer - %v", bullishHammer)
-// log.Printf("bearishHammer - %v", bearishHammer)
-// log.Printf("shortTrend - %v", shortTrend)
-// log.Printf("bearTrendCount - %v", bearTrendCount)
-// log.Printf("bullTrendCount - %v", bullTrendCount)
-// log.Printf("isInvertedHammer - %v", invertedHammer)
-// log.Printf("hhePattern - %v", hhePattern)
-// log.Printf("hhePatternTrend - %v", hhePatternTrend)
-// log.Printf("lhePatternTrend - %v", lhePatternTrend)
+//SendProfitAlerts sends alerts about profit and loss for a particular postion.
+func (cs CandleStick) SendProfitAlerts() error {
+	var pl float64
+	time.Sleep(1000 * time.Millisecond) //wait to avoid to many request error
+	pos, err := cs.KC.GetPositions()
+	if err != nil {
+		return err
+	}
+	//log.Printf("Positions : %+v\n", pos)
+
+	for _, pos := range pos.Net {
+		if pos.InstrumentToken == getUnit32(cs.Instrument.Token) {
+			pl = pos.Unrealised
+		}
+
+	}
+	if pl != 0 {
+		if pl < 0 {
+			msg := fmt.Sprintf("PROFIT DROPPED TO NEGATIVE: \nInstrument: %s \nProfit-Loss: %.2f", cs.Instrument.Symbol, pl)
+			alerts.SendAlerts(msg, alerts.TradeChannel)
+		} else if pl > 1000 {
+			msg := fmt.Sprintf("PROFIT above 1000 \nInstrument: %s \nProfit-Loss: %.2f ", cs.Instrument.Symbol, pl)
+			alerts.SendAlerts(msg, alerts.TradeChannel)
+		} else if pl > 2000 {
+			msg := fmt.Sprintf("PROFIT above 2000 \nInstrument: %s  \nProfit-Loss: %.2f", cs.Instrument.Symbol, pl)
+			alerts.SendAlerts(msg, alerts.TradeChannel)
+		}
+	} else {
+		msg := fmt.Sprintf("Instrument %s does not have any open positions", cs.Instrument.Symbol)
+		log.Println(msg)
+	}
+
+	return nil
+}

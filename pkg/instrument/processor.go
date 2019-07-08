@@ -20,7 +20,7 @@ var (
 
 //StartProcessing starts the order processing for the day!
 func StartProcessing() {
-	log.Printf("--- START ---")
+	log.Printf("--- START STOCKIST ---")
 	instruments := GetInstrumentList()
 	if len(*instruments) == 0 {
 		log.Println("Error: No instruments to analyse")
@@ -67,7 +67,7 @@ func StartProcessing() {
 	log.Printf("Closing trade in - %v", duration)
 	time.Sleep(duration)
 
-	log.Printf("--- END ---")
+	log.Printf("--- END STOCKIST ---")
 }
 
 func initDB(insturments []Instrument) error {
