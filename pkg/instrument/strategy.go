@@ -107,7 +107,7 @@ func (cs CandleStick) OpenLowHigh() (string, error) {
 	}
 
 	//Send alert about Open=High and Open=Low stocks. Unsubscribe and stop analysis of the stocks that don't follow Open High Low
-	if len(cs.Details) == 9 { //Open == high is a good canditate to short cell in case of negative markets.
+	if len(cs.Details) == 11 { //Open == high is a good canditate to short cell in case of negative markets.
 		if open == high {
 			msg := fmt.Sprintf("Possible Short Sell Stock in downtrend \nInstrument: %s \n Open: %.2f \nHigh: %.2f", cs.Instrument.Symbol, open, high)
 			alerts.SendAlerts(msg, alerts.OpenLowHigh)
@@ -115,12 +115,12 @@ func (cs CandleStick) OpenLowHigh() (string, error) {
 			msg := fmt.Sprintf("Possible Buy Stock in Uptrend \nInstrument: %s \n Open: %.2f \nLow: %.2f", cs.Instrument.Symbol, open, low)
 			alerts.SendAlerts(msg, alerts.OpenLowHigh)
 		} else {
-			err := cs.UnSubcribe()
-			if err != nil {
-				msg := fmt.Sprintf("Error unsubscribing stock %s", cs.Instrument.Symbol)
-				log.Println(msg)
-				alerts.SendAlerts(msg, alerts.ErrorChannel)
-			}
+			// err := cs.UnSubcribe()
+			// if err != nil {
+			// 	msg := fmt.Sprintf("Error unsubscribing stock %s", cs.Instrument.Symbol)
+			// 	log.Println(msg)
+			// 	alerts.SendAlerts(msg, alerts.ErrorChannel)
+			// }
 			return StopAnalysis, nil
 		}
 	}
