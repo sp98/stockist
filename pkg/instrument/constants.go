@@ -42,6 +42,7 @@ var data = [][]string{
 	{"UNITED BREWERIES", "UBL", "4278529", "NSE", "5m"},
 	{"BEML", "BEML", "101121", "NSE", "5m"},
 	{"RAYMOND", "RAYMOND", "731905", "NSE", "5m"},
+	{"ASIAN PAINTS", "ASIANPAINT", "60417", "NSE", "5m"},
 	{"TITAN COMPANY", "TITAN", "897537", "NSE", "5m"},
 	{"DR. REDDY'S LABORATORIES", "DRREDDY", "225537", "NSE", "5m"},
 	{"ZEE ENTERTAINMENT ENT", "ZEEL", "975873", "NSE", "5m"},
