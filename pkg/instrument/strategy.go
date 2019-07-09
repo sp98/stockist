@@ -89,7 +89,7 @@ func (cs CandleStick) PriceAction() {
 //OpenLowHigh strategy for stock recommendation
 func (cs CandleStick) OpenLowHigh() (string, error) {
 
-	if len(cs.Details) < 9 {
+	if len(cs.Details) < 6 {
 		log.Println("No Open Low High recommendations before 9:45 am")
 		return "", nil
 	}
@@ -99,20 +99,21 @@ func (cs CandleStick) OpenLowHigh() (string, error) {
 		return "", nil
 	}
 
-	time.Sleep(1500 * time.Millisecond) //wait to avoid to many request error
 	open, high, low, err := cs.GetOHLC()
 	if err != nil {
 		log.Printf("Error Finding OHLC for %s. Error : %+v", cs.Instrument.Symbol, err)
 		return "", err
 	}
 
+	bq, sq, qchange, _ := cs.GetTradeQuantity()
+
 	//Send alert about Open=High and Open=Low stocks. Unsubscribe and stop analysis of the stocks that don't follow Open High Low
-	if len(cs.Details) == 11 { //Open == high is a good canditate to short cell in case of negative markets.
+	if len(cs.Details) == 6 || len(cs.Details) == 9 || len(cs.Details) == 12 { //Open == high is a good canditate to short cell in case of negative markets.
 		if open == high {
-			msg := fmt.Sprintf("Possible Short Sell Stock in downtrend \nInstrument: %s \n Open: %.2f \nHigh: %.2f", cs.Instrument.Symbol, open, high)
+			msg := fmt.Sprintf("Possible Short Sell Stock in downtrend \nInstrument: %s \n Open: %.2f \nHigh: %.2f \nBuyQuanity: %v \nSellQuantity: %v \nChange: %v \n%s", cs.Instrument.Symbol, open, high, bq, sq, qchange, separation)
 			alerts.SendAlerts(msg, alerts.OpenLowHigh)
 		} else if open == low { //Open == low is a good canditate to buy in case of positive markets.
-			msg := fmt.Sprintf("Possible Buy Stock in Uptrend \nInstrument: %s \n Open: %.2f \nLow: %.2f", cs.Instrument.Symbol, open, low)
+			msg := fmt.Sprintf("Possible Buy Stock in Uptrend \nInstrument: %s \n Open: %.2f \nLow: %.2f \nBuyQuanity: %v \nSellQuantity: %v \nChange: %v, \n%s", cs.Instrument.Symbol, open, low, bq, sq, qchange, separation)
 			alerts.SendAlerts(msg, alerts.OpenLowHigh)
 		} else {
 			// err := cs.UnSubcribe()
@@ -153,7 +154,7 @@ func (cs CandleStick) OpenLowHigh() (string, error) {
 						log.Printf("BUY %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
 						log.Printf("Previous Trade: %v :: Bearish Hammer: %v :: bullishHammer: %v :: isBull: %v :: BullishMaru:: %v :: isDozi: %v", cs.PreviousTrade, bearishHammer, bullishHammer, isBull, bullishMaru, isDozi)
 						log.Printf("shortTrend: %v :: shortTrendCount: %v :: bearTrendCount: %v :: bearCount: %v :: lhePattern:: %v", shortTrend, shortTrendCount, bearTrendCount, bearCount, lhePattern)
-						msg := fmt.Sprintf("BUY CALL ::  %s - %s - %s\nPrevious Day Trend: %s \nPrevious Day Change: %s \nMESSAGE : %s \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, prevDayTrend, prevDayChange, "Ensure that market is moving up", separation)
+						msg := fmt.Sprintf("BUY CALL ::  %s - %s - %s\nPrevious Day Trend: %s \nPrevious Day Change: %s \nBuyQuanity: %v \nSellQuantity: %v \nChange: %v  \nMESSAGE : %s \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, prevDayTrend, prevDayChange, bq, sq, qchange, "Ensure that market is moving up", separation)
 						alerts.SendAlerts(msg, alerts.BuyStockChannel)
 					}
 				} else {
@@ -161,7 +162,7 @@ func (cs CandleStick) OpenLowHigh() (string, error) {
 						log.Printf("BUY %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
 						log.Printf("Previous Trade: %v :: Bearish Hammer: %v :: bullishHammer: %v :: isBull: %v :: BullishMaru:: %v :: isDozi: %v", cs.PreviousTrade, bearishHammer, bullishHammer, isBull, bullishMaru, isDozi)
 						log.Printf("shortTrend: %v :: shortTrendCount: %v :: bearTrendCount: %v :: bearCount: %v :: lhePattern:: %v", shortTrend, shortTrendCount, bearTrendCount, bearCount, lhePattern)
-						msg := fmt.Sprintf("BUY CALL ::  %s - %s - %s\nPrevious Day Trend: %s \nPrevious Day Change: %s \nMESSAGE : %s \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, prevDayTrend, prevDayChange, "Ensure that market is moving up", separation)
+						msg := fmt.Sprintf("BUY CALL ::  %s - %s - %s\nPrevious Day Trend: %s \nPrevious Day Change: %s \nBuyQuanity: %v \nSellQuantity: %v \nChange: %v  \nMESSAGE : %s \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, prevDayTrend, prevDayChange, bq, sq, qchange, "Ensure that market is moving up", separation)
 						alerts.SendAlerts(msg, alerts.BuyStockChannel)
 					}
 				}
@@ -177,7 +178,7 @@ func (cs CandleStick) OpenLowHigh() (string, error) {
 							log.Printf("SHORT SELL CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
 							log.Printf("Previous Trade: %v :: isBear: %v :: bearishMaru:  %v :: isDozi: %v", cs.PreviousTrade, isBear, bearishMaru, isDozi)
 							log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
-							msg := fmt.Sprintf("SHORT SELL CALL :: %s - %s - %s \nPrevious Day Trend: %s \nPrevious Day Change: %s \nMESSAGE: %s  \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, prevDayTrend, prevDayChange, "Ensure that market is falling down", separation)
+							msg := fmt.Sprintf("SHORT SELL CALL :: %s - %s - %s \nPrevious Day Trend: %s \nPrevious Day Change: %s \nBuyQuanity: %v \nSellQuantity: %v \nChange: %v \nMESSAGE: %s  \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, prevDayTrend, prevDayChange, bq, sq, qchange, "Ensure that market is falling down", separation)
 							alerts.SendAlerts(msg, alerts.ShortSellStocksChannel)
 
 						} else {
@@ -185,7 +186,7 @@ func (cs CandleStick) OpenLowHigh() (string, error) {
 								log.Printf("SHORT SELL CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
 								log.Printf("Previous Trade: %v :: isBear: %v :: bearishMaru:  %v :: isDozi: %v", cs.PreviousTrade, isBear, bearishMaru, isDozi)
 								log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
-								msg := fmt.Sprintf("SHORT SELL CALL :: %s - %s - %s \nPrevious Day Trend: %s \nPrevious Day Change: %s \nMESSAGE: %s  \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, prevDayTrend, prevDayChange, "Ensure that market is falling down", separation)
+								msg := fmt.Sprintf("SHORT SELL CALL :: %s - %s - %s \nPrevious Day Trend: %s \nPrevious Day Change: %s \nBuyQuanity: %v \nSellQuantity: %v \nChange: %v  \nMESSAGE: %s  \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, prevDayTrend, prevDayChange, bq, sq, qchange, "Ensure that market is falling down", separation)
 								alerts.SendAlerts(msg, alerts.ShortSellStocksChannel)
 
 							}
@@ -202,7 +203,7 @@ func (cs CandleStick) OpenLowHigh() (string, error) {
 				log.Printf("SELL CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
 				log.Printf("Previous Trade: %v :: isBear: %v :: bearishMaru:  %v :: isDozi: %v", cs.PreviousTrade, isBear, bearishMaru, isDozi)
 				log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
-				msg := fmt.Sprintf("SELL CALL %s - %s - %s \nPrevious Day Trend: %s \nPrevious Day Change: %s \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, prevDayTrend, prevDayChange, separation)
+				msg := fmt.Sprintf("SELL CALL %s - %s - %s \nPrevious Day Trend: %s \nPrevious Day Change: %s  \nBuyQuanity: %v \nSellQuantity: %v \nChange: %v  \n%s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange, prevDayTrend, prevDayChange, bq, sq, qchange, separation)
 				alerts.SendAlerts(msg, alerts.SellStockChannel)
 			}
 
@@ -339,14 +340,43 @@ func getLastTrade(instToken string) string {
 
 //GetOHLC return open high low and close for the stock
 func (cs CandleStick) GetOHLC() (float64, float64, float64, error) {
+	cs.Mux.Lock()
+	defer cs.Mux.Unlock()
+	time.Sleep(1500 * time.Millisecond) //wait to avoid to many request error
 	token := cs.Instrument.Token
 	ohlc, err := cs.KC.GetOHLC(token)
 	if err != nil {
 		log.Println("Error finding OHLC : ", err)
 		return 0, 0, 0, err
 	}
-	// log.Printf("OHCL %+v", ohlc)
+
 	return ohlc[token].OHLC.Open, ohlc[token].OHLC.High, ohlc[token].OHLC.Low, nil
+
+}
+
+//GetTradeQuantity returns total buy and sell trade and percentage change
+func (cs CandleStick) GetTradeQuantity() (int, int, string, error) {
+	cs.Mux.Lock()
+	defer cs.Mux.Unlock()
+	time.Sleep(1500 * time.Millisecond)
+	quote, err := cs.KC.GetQuote(cs.Instrument.Token)
+	if err != nil {
+		log.Println("Error finding OHLC : ", err)
+		return 0, 0, "", err
+	}
+
+	bq := quote[cs.Instrument.Token].BuyQuantity
+	sq := quote[cs.Instrument.Token].SellQuantity
+
+	var qChange string
+	if bq > sq {
+		qChange = fmt.Sprintf("+%.2f%%", float64(((bq-sq)/bq)*100))
+	} else {
+		qChange = fmt.Sprintf("-%.2f%%", float64(((sq-bq)/sq)*100))
+
+	}
+
+	return bq, sq, qChange, nil
 
 }
 

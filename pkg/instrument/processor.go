@@ -3,6 +3,7 @@ package instrument
 import (
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	kiteconnect "github.com/sp98/gokiteconnect"
@@ -50,8 +51,10 @@ func StartProcessing() {
 
 	// Analyse the aggregated tick results
 	kc := getConnection()
+	mutex := &sync.Mutex{}
 	for _, instrument := range *instruments {
 		cs := &CandleStick{
+			Mux:        mutex,
 			KC:         kc,
 			Instrument: instrument,
 		}
@@ -106,7 +109,9 @@ func closeTrade() (time.Duration, error) {
 }
 
 func getConnection() *kiteconnect.Client {
-	kc := kiteconnect.New(apiKey)
-	kc.SetAccessToken(accessToken)
+	// kc := kiteconnect.New(apiKey)
+	// kc.SetAccessToken(accessToken)
+	kc := kiteconnect.New("c7b8qdb6dcwc9obc")
+	kc.SetAccessToken("JHZhsrzcSw7p5eFCBRGyQ6CxguYs3hu0")
 	return kc
 }

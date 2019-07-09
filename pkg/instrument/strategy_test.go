@@ -1,6 +1,9 @@
 package instrument
 
-import "testing"
+import (
+	"log"
+	"testing"
+)
 
 var testData1 = [][]float64{
 	//Open, High, Low, Close, AverageTradedPrice (in reverse order. )
@@ -90,10 +93,11 @@ var dataBullishInvertedHammerAfterRally = [][]float64{
 func getTesCandleStick(data [][]float64) CandleStick {
 	var csList []CandleStickList
 	inst := &Instrument{
-		Name:     "testInstrument",
+		Name:     "ACC",
 		Exchange: "NSE",
-		Symbol:   "Tinst",
+		Symbol:   "ACC",
 		Interval: "5m",
+		Token:    "5633",
 	}
 	for _, d := range data {
 		td := &CandleStickList{
@@ -106,6 +110,7 @@ func getTesCandleStick(data [][]float64) CandleStick {
 		csList = append(csList, *td)
 	}
 	cs := &CandleStick{
+		KC:         getConnection(),
 		Instrument: *inst,
 		Details:    csList,
 	}
@@ -148,4 +153,15 @@ func TestPreviousDayTrend(t *testing.T) {
 	trend, change := getPreviousDayTrend(4, 2)
 	t.Error(trend)
 	t.Error(change)
+}
+
+func TestUnSubscribe(t *testing.T) {
+	cs := getTesCandleStick(dataBearishInvertedHammerAfterRally)
+	log.Printf("CS %+v", cs)
+	q, err := cs.KC.GetQuote(cs.Instrument.Token)
+	if err != nil {
+		t.Error(q)
+	}
+	t.Error(q[cs.Instrument.Token].BuyQuantity)
+	t.Error(q[cs.Instrument.Token].SellQuantity)
 }

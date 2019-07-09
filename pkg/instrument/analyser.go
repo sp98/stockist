@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"sync"
 	"time"
 
 	kiteconnect "github.com/sp98/gokiteconnect"
@@ -15,6 +16,7 @@ const StopAnalysis = "STOPANALYSIS"
 
 //CandleStick holds the currently trading order details
 type CandleStick struct {
+	Mux           *sync.Mutex
 	KC            *kiteconnect.Client //Kite Trading Client
 	Instrument    Instrument
 	Details       []CandleStickList
