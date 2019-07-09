@@ -99,7 +99,7 @@ func (cs CandleStick) OpenLowHigh() (string, error) {
 		return "", nil
 	}
 
-	time.Sleep(1000 * time.Millisecond) //wait to avoid to many request error
+	time.Sleep(1500 * time.Millisecond) //wait to avoid to many request error
 	open, high, low, err := cs.GetOHLC()
 	if err != nil {
 		log.Printf("Error Finding OHLC for %s. Error : %+v", cs.Instrument.Symbol, err)
@@ -109,10 +109,10 @@ func (cs CandleStick) OpenLowHigh() (string, error) {
 	//Send alert about Open=High and Open=Low stocks. Unsubscribe and stop analysis of the stocks that don't follow Open High Low
 	if len(cs.Details) == 9 { //Open == high is a good canditate to short cell in case of negative markets.
 		if open == high {
-			msg := fmt.Sprintf("Possible Short Sell Stock \nInstrument: %s \n Open: %.2f \nHigh: %.2f", cs.Instrument.Symbol, open, high)
+			msg := fmt.Sprintf("Possible Short Sell Stock in downtrend \nInstrument: %s \n Open: %.2f \nHigh: %.2f", cs.Instrument.Symbol, open, high)
 			alerts.SendAlerts(msg, alerts.OpenLowHigh)
 		} else if open == low { //Open == low is a good canditate to buy in case of positive markets.
-			msg := fmt.Sprintf("Possible Buy Stock \nInstrument: %s \n Open: %.2f \nLow: %.2f", cs.Instrument.Symbol, open, low)
+			msg := fmt.Sprintf("Possible Buy Stock in Uptrend \nInstrument: %s \n Open: %.2f \nLow: %.2f", cs.Instrument.Symbol, open, low)
 			alerts.SendAlerts(msg, alerts.OpenLowHigh)
 		} else {
 			err := cs.UnSubcribe()
@@ -361,7 +361,7 @@ func (cs CandleStick) UnSubcribe() error {
 //SendProfitAlerts sends alerts about profit and loss for a particular postion.
 func (cs CandleStick) SendProfitAlerts() error {
 	var pl float64
-	time.Sleep(1000 * time.Millisecond) //wait to avoid to many request error
+	time.Sleep(2000 * time.Millisecond) //wait to avoid to many request error
 	pos, err := cs.KC.GetPositions()
 	if err != nil {
 		return err

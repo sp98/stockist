@@ -83,7 +83,9 @@ func (cs *CandleStick) Analyse() string {
 			cs.AnalyseSensex()
 		} else {
 			status, _ := cs.OpenLowHigh()
-			return status
+			if len(status) != 0 {
+				return status
+			}
 		}
 
 	} else if len(cs.Details) == 3 { //Get Opening trend at 9:10 am
