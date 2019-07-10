@@ -89,10 +89,10 @@ func (cs CandleStick) PriceAction() {
 //OpenLowHigh strategy for stock recommendation
 func (cs CandleStick) OpenLowHigh() (string, error) {
 
-	if len(cs.Details) < 6 {
-		log.Println("No Open Low High recommendations before 9:45 am")
-		return "", nil
-	}
+	// if len(cs.Details) < 6 {
+	// 	log.Println("No Open Low High recommendations before 9:45 am")
+	// 	return "", nil
+	// }
 
 	if cs.KC == nil {
 		log.Println("Error: Kite connection is nil")
@@ -108,7 +108,7 @@ func (cs CandleStick) OpenLowHigh() (string, error) {
 	bq, sq, qchange, _ := cs.GetTradeQuantity()
 
 	//Send alert about Open=High and Open=Low stocks. Unsubscribe and stop analysis of the stocks that don't follow Open High Low
-	if len(cs.Details) == 6 || len(cs.Details) == 9 || len(cs.Details) == 12 { //Open == high is a good canditate to short cell in case of negative markets.
+	if len(cs.Details) == 4 || len(cs.Details) == 6 || len(cs.Details) == 9 || len(cs.Details) == 12 { //Open == high is a good canditate to short cell in case of negative markets.
 		if open == high {
 			msg := fmt.Sprintf("Possible Short Sell Stock in downtrend \nInstrument: %s \n Open: %.2f \nHigh: %.2f \nBuyQuanity: %v \nSellQuantity: %v \nChange: %v \n%s", cs.Instrument.Symbol, open, high, bq, sq, qchange, separation)
 			alerts.SendAlerts(msg, alerts.OpenLowHigh)
@@ -355,7 +355,7 @@ func (cs CandleStick) GetOHLC() (float64, float64, float64, error) {
 }
 
 //GetTradeQuantity returns total buy and sell trade and percentage change
-func (cs CandleStick) GetTradeQuantity() (int, int, string, error) {
+func (cs CandleStick) GetTradeQuantity() (float64, float64, string, error) {
 	cs.Mux.Lock()
 	defer cs.Mux.Unlock()
 	time.Sleep(1500 * time.Millisecond)
@@ -365,14 +365,15 @@ func (cs CandleStick) GetTradeQuantity() (int, int, string, error) {
 		return 0, 0, "", err
 	}
 
-	bq := quote[cs.Instrument.Token].BuyQuantity
-	sq := quote[cs.Instrument.Token].SellQuantity
+	bq := float64(quote[cs.Instrument.Token].BuyQuantity)
+	sq := float64(quote[cs.Instrument.Token].SellQuantity)
 
 	var qChange string
 	if bq > sq {
-		qChange = fmt.Sprintf("+%.2f%%", float64(((bq-sq)/bq)*100))
+
+		qChange = fmt.Sprintf("+%.2f%%", ((bq-sq)/bq)*100)
 	} else {
-		qChange = fmt.Sprintf("-%.2f%%", float64(((sq-bq)/sq)*100))
+		qChange = fmt.Sprintf("-%.2f%%", ((sq-bq)/sq)*100)
 
 	}
 
