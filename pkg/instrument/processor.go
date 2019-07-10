@@ -109,9 +109,7 @@ func closeTrade() (time.Duration, error) {
 }
 
 func getConnection() *kiteconnect.Client {
-	// kc := kiteconnect.New(apiKey)
-	// kc.SetAccessToken(accessToken)
-	kc := kiteconnect.New("c7b8qdb6dcwc9obc")
-	kc.SetAccessToken("JHZhsrzcSw7p5eFCBRGyQ6CxguYs3hu0")
+	kc := kiteconnect.New(apiKey)
+	kc.SetAccessToken(accessToken)
 	return kc
 }
