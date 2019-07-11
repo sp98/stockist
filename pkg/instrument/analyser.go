@@ -81,9 +81,12 @@ func (cs *CandleStick) Analyse() string {
 	cs.PreviousTrade = getLastTrade(cs.Instrument.Token) //TODO: Does not work with short sell scenario!
 
 	if len(cs.Details) > 4 { //Statring analysis after 9:15 am
-		if cs.Instrument.Name == "SENSEX" {
+		if cs.Instrument.Symbol == "SENSEX" {
 			cs.AnalyseSensex()
 		} else {
+			if cs.Instrument.Symbol == "BAJFINANCE" {
+				cs.AnalyseBajajFinance()
+			}
 			status, _ := cs.OpenLowHigh()
 			if len(status) != 0 {
 				return status
