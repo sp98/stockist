@@ -89,11 +89,6 @@ func (cs CandleStick) PriceAction() {
 //OpenLowHigh strategy for stock recommendation
 func (cs CandleStick) OpenLowHigh() (string, error) {
 
-	// if len(cs.Details) < 6 {
-	// 	log.Println("No Open Low High recommendations before 9:45 am")
-	// 	return "", nil
-	// }
-
 	if cs.KC == nil {
 		log.Println("Error: Kite connection is nil")
 		return "", nil
@@ -105,14 +100,14 @@ func (cs CandleStick) OpenLowHigh() (string, error) {
 		return "", err
 	}
 
-	bq, sq, qchange, _ := cs.GetTradeQuantity()
-
 	//Send alert about Open=High and Open=Low stocks. Unsubscribe and stop analysis of the stocks that don't follow Open High Low
-	if len(cs.Details) == 4 || len(cs.Details) == 6 || len(cs.Details) == 9 || len(cs.Details) == 12 { //Open == high is a good canditate to short cell in case of negative markets.
+	if len(cs.Details) == 5 || len(cs.Details) == 6 || len(cs.Details) == 9 || len(cs.Details) == 12 { //Open == high is a good canditate to short cell in case of negative markets.
 		if open == high {
+			bq, sq, qchange, _ := cs.GetTradeQuantity()
 			msg := fmt.Sprintf("Possible Short Sell Stock in downtrend \nInstrument: %s \n Open: %.2f \nHigh: %.2f \nBuyQuanity: %v \nSellQuantity: %v \nChange: %v \n%s", cs.Instrument.Symbol, open, high, bq, sq, qchange, separation)
 			alerts.SendAlerts(msg, alerts.OpenLowHigh)
 		} else if open == low { //Open == low is a good canditate to buy in case of positive markets.
+			bq, sq, qchange, _ := cs.GetTradeQuantity()
 			msg := fmt.Sprintf("Possible Buy Stock in Uptrend \nInstrument: %s \n Open: %.2f \nLow: %.2f \nBuyQuanity: %v \nSellQuantity: %v \nChange: %v, \n%s", cs.Instrument.Symbol, open, low, bq, sq, qchange, separation)
 			alerts.SendAlerts(msg, alerts.OpenLowHigh)
 		} else {
@@ -151,6 +146,7 @@ func (cs CandleStick) OpenLowHigh() (string, error) {
 			if bearishHammer || bullishHammer || bullishMaru || isDozi || (isBull && !invertedHammer) {
 				if len(cs.Details) <= 18 { //Giving suggestions before 10:30 am
 					if (shortTrend == "decline" && shortTrendCount >= 2) || (bearTrendCount >= 2 || bearCount >= 2) || lhePattern >= 3 {
+						bq, sq, qchange, _ := cs.GetTradeQuantity()
 						log.Printf("BUY %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
 						log.Printf("Previous Trade: %v :: Bearish Hammer: %v :: bullishHammer: %v :: isBull: %v :: BullishMaru:: %v :: isDozi: %v", cs.PreviousTrade, bearishHammer, bullishHammer, isBull, bullishMaru, isDozi)
 						log.Printf("shortTrend: %v :: shortTrendCount: %v :: bearTrendCount: %v :: bearCount: %v :: lhePattern:: %v", shortTrend, shortTrendCount, bearTrendCount, bearCount, lhePattern)
@@ -159,6 +155,7 @@ func (cs CandleStick) OpenLowHigh() (string, error) {
 					}
 				} else {
 					if (shortTrend == "decline" && shortTrendCount >= 4) || (bearTrendCount >= 4 || bearCount >= 4) || lhePattern >= 5 {
+						bq, sq, qchange, _ := cs.GetTradeQuantity()
 						log.Printf("BUY %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
 						log.Printf("Previous Trade: %v :: Bearish Hammer: %v :: bullishHammer: %v :: isBull: %v :: BullishMaru:: %v :: isDozi: %v", cs.PreviousTrade, bearishHammer, bullishHammer, isBull, bullishMaru, isDozi)
 						log.Printf("shortTrend: %v :: shortTrendCount: %v :: bearTrendCount: %v :: bearCount: %v :: lhePattern:: %v", shortTrend, shortTrendCount, bearTrendCount, bearCount, lhePattern)
@@ -175,6 +172,7 @@ func (cs CandleStick) OpenLowHigh() (string, error) {
 				if invertedHammer || bearishMaru || isDozi || isBear {
 					if len(cs.Details) <= 18 {
 						if (shortTrend == "rally" && shortTrendCount >= 2) || (bullTrendCount >= 2 || bullCount >= 2) || hhePattern >= 4 {
+							bq, sq, qchange, _ := cs.GetTradeQuantity()
 							log.Printf("SHORT SELL CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
 							log.Printf("Previous Trade: %v :: isBear: %v :: bearishMaru:  %v :: isDozi: %v", cs.PreviousTrade, isBear, bearishMaru, isDozi)
 							log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
@@ -183,6 +181,7 @@ func (cs CandleStick) OpenLowHigh() (string, error) {
 
 						} else {
 							if (shortTrend == "rally" && shortTrendCount >= 4) || (bullTrendCount >= 4 || bullCount >= 4) || hhePattern >= 4 {
+								bq, sq, qchange, _ := cs.GetTradeQuantity()
 								log.Printf("SHORT SELL CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
 								log.Printf("Previous Trade: %v :: isBear: %v :: bearishMaru:  %v :: isDozi: %v", cs.PreviousTrade, isBear, bearishMaru, isDozi)
 								log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
@@ -200,6 +199,7 @@ func (cs CandleStick) OpenLowHigh() (string, error) {
 	} else if cs.PreviousTrade == "BOUGHT" {
 		if isBear || bearishMaru || isDozi {
 			if (shortTrend == "rally" && shortTrendCount >= 4) || (bullTrendCount >= 4 || bullCount >= 4) {
+				bq, sq, qchange, _ := cs.GetTradeQuantity()
 				log.Printf("SELL CALL %s - %s - %s", cs.Instrument.Name, cs.Instrument.Symbol, cs.Instrument.Exchange)
 				log.Printf("Previous Trade: %v :: isBear: %v :: bearishMaru:  %v :: isDozi: %v", cs.PreviousTrade, isBear, bearishMaru, isDozi)
 				log.Printf("shortTrend: %v :: shortTrendCount: %v :: bullTrendCount: %v :: bullCount: %v :: hhePattern:: %v", shortTrend, shortTrendCount, bullTrendCount, bullCount, hhePattern)
@@ -283,7 +283,6 @@ func (cs CandleStick) AnalyseBajajFinance() (string, error) {
 	_, bullTrendCount := isBullish(cs.Details[1:])
 	hhePattern := higherLowsEngulfingPatternCount(cs.Details)
 	lhePattern := lowerHighsEngulfingPatternCount(cs.Details)
-
 	bq, sq, qchange, _ := cs.GetTradeQuantity()
 
 	//Send alert about Open=High and Open=Low stocks. Unsubscribe and stop analysis of the stocks that don't follow Open High Low
@@ -420,7 +419,7 @@ func getLastTrade(instToken string) string {
 func (cs CandleStick) GetOHLC() (float64, float64, float64, error) {
 	cs.Mux.Lock()
 	defer cs.Mux.Unlock()
-	time.Sleep(1500 * time.Millisecond) //wait to avoid to many request error
+	time.Sleep(500 * time.Millisecond) //wait to avoid to many request error
 	token := cs.Instrument.Token
 	ohlc, err := cs.KC.GetOHLC(token)
 	if err != nil {
@@ -436,7 +435,7 @@ func (cs CandleStick) GetOHLC() (float64, float64, float64, error) {
 func (cs CandleStick) GetTradeQuantity() (float64, float64, string, error) {
 	cs.Mux.Lock()
 	defer cs.Mux.Unlock()
-	time.Sleep(1500 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 	quote, err := cs.KC.GetQuote(cs.Instrument.Token)
 	if err != nil {
 		log.Println("Error finding OHLC : ", err)
