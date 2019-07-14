@@ -30,6 +30,7 @@ var data = [][]string{
 	{"INTERGLOBE AVIATION", "INDIGO", "2865921", "NSE", "5m"},
 	{"RELIANCE INDUSTRIES", "RELIANCE", "738561", "NSE", "5m"},
 	{"HDFC", "HDFC", "340481", "NSE", "5m"},
+	{"HDFC BANK", "HDFCBANK", "341249", "NSE", "5m"},
 	{"HINDUNILVR", "HINDUNILVR", "356865", "NSE", "5m"},
 	{"VOLTAS", "VOLTAS", "951809", "NSE", "5m"},
 	{"PIRAMAL ENTERPRISES", "PEL", "617473", "NSE", "5m"},
