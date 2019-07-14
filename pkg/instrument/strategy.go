@@ -101,7 +101,7 @@ func (cs CandleStick) OpenLowHigh() (string, error) {
 	}
 
 	//Send alert about Open=High and Open=Low stocks. Unsubscribe and stop analysis of the stocks that don't follow Open High Low
-	if len(cs.Details) == 5 || len(cs.Details) == 6 || len(cs.Details) == 9 || len(cs.Details) == 12 { //Open == high is a good canditate to short cell in case of negative markets.
+	if len(cs.Details) <= 6 || len(cs.Details) == 9 || len(cs.Details) == 12 { //Open == high is a good canditate to short cell in case of negative markets.
 		if open == high {
 			bq, sq, qchange, _ := cs.GetTradeQuantity()
 			msg := fmt.Sprintf("Possible Short Sell Stock in downtrend \nInstrument: %s \n Open: %.2f \nHigh: %.2f \nBuyQuanity: %v \nSellQuantity: %v \nChange: %v \n%s", cs.Instrument.Symbol, open, high, bq, sq, qchange, separation)
@@ -486,7 +486,7 @@ func (cs CandleStick) SendProfitAlerts() error {
 		if pl < 0 {
 			msg := fmt.Sprintf("PROFIT DROPPED TO NEGATIVE: \nInstrument: %s \nProfit-Loss: %.2f", cs.Instrument.Symbol, pl)
 			alerts.SendAlerts(msg, alerts.TradeChannel)
-		} else if pl > 1000 {
+		} else if pl > 1000 && pl < 2000 {
 			msg := fmt.Sprintf("PROFIT above 1000 \nInstrument: %s \nProfit-Loss: %.2f ", cs.Instrument.Symbol, pl)
 			alerts.SendAlerts(msg, alerts.TradeChannel)
 		} else if pl > 2000 {
