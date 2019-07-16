@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	kiteconnect "github.com/sp98/gokiteconnect"
 	kiteticker "github.com/sp98/gokiteconnect/ticker"
 	alerts "github.com/stockist/pkg/notification"
 	"github.com/stockist/pkg/storage"
@@ -94,7 +95,7 @@ func (cs CandleStick) OpenLowHigh() (string, error) {
 		return "", nil
 	}
 
-	open, high, low, err := cs.GetOHLC()
+	open, high, low, _, err := cs.GetOHLC()
 	if err != nil {
 		log.Printf("Error Finding OHLC for %s. Error : %+v", cs.Instrument.Symbol, err)
 		return "", err
@@ -416,35 +417,61 @@ func getLastTrade(instToken string) string {
 }
 
 //GetOHLC return open high low and close for the stock
-func (cs CandleStick) GetOHLC() (float64, float64, float64, error) {
-	cs.Mux.Lock()
-	defer cs.Mux.Unlock()
-	time.Sleep(500 * time.Millisecond) //wait to avoid to many request error
-	token := cs.Instrument.Token
-	ohlc, err := cs.KC.GetOHLC(token)
+func (cs CandleStick) GetOHLC() (float64, float64, float64, float64, error) {
+
+	//Get Open High Low from the API call
+	// cs.Mux.Lock()
+	// defer cs.Mux.Unlock()
+	// time.Sleep(500 * time.Millisecond) //wait to avoid to many request error
+	// token := cs.Instrument.Token
+	// ohlc, err := cs.KC.GetOHLC(token)
+	// if err != nil {
+	// 	log.Println("Error finding OHLC : ", err)
+	// 	return 0, 0, 0, err
+	// }
+
+	// return ohlc[token].OHLC.Open, ohlc[token].OHLC.High, ohlc[token].OHLC.Low, nil
+
+	//Get Open High Low from DB
+	db := storage.NewDB(DBUrl, StockDB, "")
+	db.Measurement = fmt.Sprintf("%s_%s", "ticks", cs.Instrument.Token)
+	open, high, low, close, err := db.GetOHLC()
 	if err != nil {
-		log.Println("Error finding OHLC : ", err)
-		return 0, 0, 0, err
+		return 0, 0, 0, 0, nil
 	}
-
-	return ohlc[token].OHLC.Open, ohlc[token].OHLC.High, ohlc[token].OHLC.Low, nil
-
+	return open, high, low, close, nil
 }
 
 //GetTradeQuantity returns total buy and sell trade and percentage change
 func (cs CandleStick) GetTradeQuantity() (float64, float64, string, error) {
-	cs.Mux.Lock()
-	defer cs.Mux.Unlock()
-	time.Sleep(500 * time.Millisecond)
-	quote, err := cs.KC.GetQuote(cs.Instrument.Token)
-	if err != nil {
-		log.Println("Error finding OHLC : ", err)
-		return 0, 0, "", err
-	}
+	//Get Buy and Sell Quanity  from API
+	// cs.Mux.Lock()
+	// defer cs.Mux.Unlock()
+	// time.Sleep(500 * time.Millisecond)
+	// quote, err := cs.KC.GetQuote(cs.Instrument.Token)
+	// if err != nil {
+	// 	log.Println("Error finding OHLC : ", err)
+	// 	return 0, 0, "", err
+	// }
 
-	bq := float64(quote[cs.Instrument.Token].BuyQuantity)
-	sq := float64(quote[cs.Instrument.Token].SellQuantity)
+	// bq := float64(quote[cs.Instrument.Token].BuyQuantity)
+	// sq := float64(quote[cs.Instrument.Token].SellQuantity)
 
+	// var qChange string
+	// if bq > sq {
+
+	// 	qChange = fmt.Sprintf("+%.2f%%", ((bq-sq)/bq)*100)
+	// } else {
+	// 	qChange = fmt.Sprintf("-%.2f%%", ((sq-bq)/sq)*100)
+
+	// }
+
+	// return bq, sq, qChange, nil
+
+	//Get Buy and Sell Quanity from DB
+	db := storage.NewDB(DBUrl, StockDB, "")
+	db.Measurement = fmt.Sprintf("%s_%s", "ticks", cs.Instrument.Token)
+	bq, sq, err := db.GetTradeQuantity()
 	var qChange string
 	if bq > sq {
 
@@ -453,7 +480,9 @@ func (cs CandleStick) GetTradeQuantity() (float64, float64, string, error) {
 		qChange = fmt.Sprintf("-%.2f%%", ((sq-bq)/sq)*100)
 
 	}
-
+	if err != nil {
+		return 0, 0, qChange, nil
+	}
 	return bq, sq, qChange, nil
 
 }
@@ -477,6 +506,11 @@ func (cs CandleStick) SendProfitAlerts() error {
 	//log.Printf("Positions : %+v\n", pos)
 
 	for _, pos := range pos.Net {
+		if pos.Quantity != 0 {
+			log.Printf("Pos - %+v", pos)
+			log.Printf("***************")
+		}
+
 		if pos.InstrumentToken == getUnit32(cs.Instrument.Token) {
 			pl = pos.Unrealised
 		}
@@ -484,13 +518,13 @@ func (cs CandleStick) SendProfitAlerts() error {
 	}
 	if pl != 0 {
 		if pl < 0 {
-			msg := fmt.Sprintf("PROFIT DROPPED TO NEGATIVE: \nInstrument: %s \nProfit-Loss: %.2f", cs.Instrument.Symbol, pl)
+			msg := fmt.Sprintf("PROFIT DROPPED TO NEGATIVE: \nInstrument: %s \nLoss: %.2f \n%s", cs.Instrument.Symbol, pl, separation)
 			alerts.SendAlerts(msg, alerts.TradeChannel)
 		} else if pl > 1000 && pl < 2000 {
-			msg := fmt.Sprintf("PROFIT above 1000 \nInstrument: %s \nProfit-Loss: %.2f ", cs.Instrument.Symbol, pl)
+			msg := fmt.Sprintf("PROFIT above 1000 \nInstrument: %s \nProfit: %.2f \n%s", cs.Instrument.Symbol, pl, separation)
 			alerts.SendAlerts(msg, alerts.TradeChannel)
 		} else if pl > 2000 {
-			msg := fmt.Sprintf("PROFIT above 2000 \nInstrument: %s  \nProfit-Loss: %.2f", cs.Instrument.Symbol, pl)
+			msg := fmt.Sprintf("PROFIT above 2000 \nInstrument: %s  \nProfit: %.2f \n%s", cs.Instrument.Symbol, pl, separation)
 			alerts.SendAlerts(msg, alerts.TradeChannel)
 		}
 	} else {
@@ -499,4 +533,41 @@ func (cs CandleStick) SendProfitAlerts() error {
 	}
 
 	return nil
+}
+
+//SendEarningAlerts sends alerst related to profit and lose
+func SendEarningAlerts(kc *kiteconnect.Client) {
+	var pl float64
+	for {
+		time.Sleep(2 * time.Minute)
+		pos, err := kc.GetPositions()
+		if err != nil {
+			//return err
+		}
+		//log.Printf("Positions : %+v\n", pos)
+
+		for _, pos := range pos.Net {
+			if pos.Quantity != 0 {
+				log.Printf("Pos - %+v", pos)
+				log.Printf("***************")
+				pl = pos.Unrealised
+				if pl != 0 {
+					if pl < 0 {
+						msg := fmt.Sprintf("PROFIT DROPPED TO NEGATIVE: \nInstrument: %s \nProfit-Loss: %.2f", pos.Tradingsymbol, pl)
+						alerts.SendAlerts(msg, alerts.TradeChannel)
+					} else if pl > 1000 && pl < 2000 {
+						msg := fmt.Sprintf("PROFIT above 1000 \nInstrument: %s \nProfit-Loss: %.2f ", pos.Tradingsymbol, pl)
+						alerts.SendAlerts(msg, alerts.TradeChannel)
+					} else if pl > 2000 {
+						msg := fmt.Sprintf("PROFIT above 2000 \nInstrument: %s  \nProfit-Loss: %.2f", pos.Tradingsymbol, pl)
+						alerts.SendAlerts(msg, alerts.TradeChannel)
+					}
+				}
+			} else {
+				log.Println("No Open Positions Found")
+			}
+
+		}
+	}
+
 }

@@ -98,12 +98,12 @@ func (cs *CandleStick) Analyse() string {
 		cs.OpeningTrend()
 	}
 
-	//Send Profit alerts for orders placed after 9:45 am
-	if len(cs.Details) >= 9 {
-		if cs.Instrument.Name != "SENSEX" {
-			cs.SendProfitAlerts()
-		}
-	}
+	// //Send Profit alerts for orders placed after 9:45 am
+	// if len(cs.Details) >= 9 {
+	// 	if cs.Instrument.Name != "SENSEX" {
+	// 		cs.SendProfitAlerts()
+	// 	}
+	// }
 
 	return ""
 }

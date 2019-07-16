@@ -19,6 +19,7 @@ var (
 	maxHighQuery          = "SELECT max(High) as Highest from %s"
 	minLowQuery           = "SELECT min(Low) as Lowest from %s"
 	ticksQuery            = "SELECT * FROM %s ORDER BY time DESC"
+	ohlcQuery             = "SELECT * FROM %s ORDER BY time DESC limit 1"
 	tickCQ                = "CREATE CONTINUOUS QUERY %s ON %s BEGIN %s END"
 	tickCQTime            = "SELECT FIRST(LastPrice) as Open, MAX(LastPrice) as High, MIN(LastPrice) as Low, LAST(LastPrice) as Close, last(AverageTradePrice) as AverageTradePrice INTO %s FROM %s GROUP BY time(%s)"
 )
@@ -72,6 +73,58 @@ func (db DB) GetTicks() (*client.Response, error) {
 
 }
 
+//GetOHLC returns Open High Low and Close value for a Stock
+func (db DB) GetOHLC() (float64, float64, float64, float64, error) {
+	dbClient, _ := db.GetClient()
+	defer dbClient.Close()
+	query := client.Query{
+		Command:  fmt.Sprintf(ohlcQuery, db.Measurement),
+		Database: db.Name,
+	}
+	response, err := db.executeQuery(query)
+	if err != nil {
+		log.Fatalln("Error getting orders - ", err)
+		return 0, 0, 0, 0, err
+	}
+
+	//log.Printf("Res - %+v", response)
+	Open := response.Results[0].Series[0].Values[0][7]
+	Openf, _ := strconv.ParseFloat(fmt.Sprintf("%v", Open), 64)
+	High := response.Results[0].Series[0].Values[0][4]
+	Highf, _ := strconv.ParseFloat(fmt.Sprintf("%v", High), 64)
+	Low := response.Results[0].Series[0].Values[0][6]
+	Lowf, _ := strconv.ParseFloat(fmt.Sprintf("%v", Low), 64)
+	Close := response.Results[0].Series[0].Values[0][3]
+	Closef, _ := strconv.ParseFloat(fmt.Sprintf("%v", Close), 64)
+
+	//log.Println("OHLC - ", Open, High, Low, Close)
+	return Openf, Highf, Lowf, Closef, nil
+
+}
+
+//GetTradeQuantity returns the Buy and sell quanity
+func (db DB) GetTradeQuantity() (float64, float64, error) {
+	dbClient, _ := db.GetClient()
+	defer dbClient.Close()
+	query := client.Query{
+		Command:  fmt.Sprintf(ohlcQuery, db.Measurement),
+		Database: db.Name,
+	}
+	response, err := db.executeQuery(query)
+	if err != nil {
+		log.Fatalln("Error getting orders - ", err)
+		return 0, 0, err
+	}
+	bq := response.Results[0].Series[0].Values[0][2]
+	bqf, _ := strconv.ParseFloat(fmt.Sprintf("%v", bq), 64)
+	sq := response.Results[0].Series[0].Values[0][8]
+	sqf, _ := strconv.ParseFloat(fmt.Sprintf("%v", sq), 64)
+
+	//log.Println("OHLC - ", Open, High, Low, Close)
+	return bqf, sqf, nil
+
+}
+
 //StoreTick saves tick data in influx db
 func (db DB) StoreTick(tickData *kiteticker.Tick) error {
 	dbClient, _ := db.GetClient()
@@ -89,6 +142,12 @@ func (db DB) StoreTick(tickData *kiteticker.Tick) error {
 	fields := map[string]interface{}{
 		"LastPrice":         tick.LastPrice,
 		"AverageTradePrice": tick.AverageTradePrice,
+		"Open":              tick.OHLC.Open,
+		"High":              tick.OHLC.High,
+		"Low":               tick.OHLC.Low,
+		"Close":             tick.OHLC.Close,
+		"BuyQuantity":       tick.TotalBuyQuantity,
+		"SellQuantity":      tick.TotalSellQuantity,
 	}
 	tags := map[string]string{
 		// "InstrumentToken": fmt.Sprint(tick.InstrumentToken),
@@ -149,10 +208,12 @@ func (db DB) GetMaxHigh() (float64, error) {
 		log.Fatalln("Error getting orders - ", err)
 		// return nil, err
 	}
+	log.Printf("res %+v", response)
 	// return response, nil
 	if len(response.Results) == 0 {
 		return 0, fmt.Errorf("Error finding max High from the aggregared query")
 	}
+	log.Printf("res %+v", response)
 	highestHigh := response.Results[0].Series[0].Values[0][1]
 	hightestHighf, _ := strconv.ParseFloat(fmt.Sprintf("%v", highestHigh), 64)
 	return hightestHighf, nil

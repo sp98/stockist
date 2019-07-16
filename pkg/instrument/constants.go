@@ -3,7 +3,7 @@ package instrument
 import "os"
 
 const (
-	marketCloseTime      = "%s 15:30:00"
+	marketCloseTime      = "%s 17:30:00"
 	marketActualOpenTime = "%s 09:13:00 MST"
 	tstringFormat        = "2006-01-02 15:04:05"
 	layOut               = "2006-01-02 15:04:05"

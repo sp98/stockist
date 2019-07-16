@@ -20,6 +20,14 @@ func TestGetMaxHigh(t *testing.T) {
 
 }
 
+func TestGetTicks(t *testing.T) {
+	db := getDB()
+	db.Measurement = "ticks_738561"
+	buy, sell, _ := db.GetTradeQuantity()
+	t.Error("resp", buy, sell)
+
+}
+
 // func TestGetLowest(t *testing.T) {
 // 	db := getDB()
 // 	db.GetLowest()

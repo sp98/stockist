@@ -61,6 +61,7 @@ func StartProcessing() {
 		go cs.startAnalysis()
 
 	}
+	go SendEarningAlerts(kc)
 
 	//Wait until some time.
 	duration, err := closeTrade()

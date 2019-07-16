@@ -165,3 +165,13 @@ func TestUnSubscribe(t *testing.T) {
 	t.Error(q[cs.Instrument.Token].BuyQuantity)
 	t.Error(q[cs.Instrument.Token].SellQuantity)
 }
+
+func TestEarningAlerts(t *testing.T) {
+	// cs := getTesCandleStick(dataBearishInvertedHammerAfterRally)
+	// cs.SendProfitAlerts()
+	// t.Error("hi")
+
+	kc := getConnection()
+	SendEarningAlerts(kc)
+	t.Error("hi")
+}
